@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ArrowLeft, Package, Truck, CheckCircle2, Clock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { getHumanOrderStatus, getOrderStatusEmoji } from "@/utils/notifications";
 
 const OrderTracking = () => {
   const { orderId } = useParams();
@@ -25,7 +26,7 @@ const OrderTracking = () => {
 
     fetchOrder();
 
-    // Subscribe to order updates
+    // Subscribe to real-time order updates
     const channel = supabase
       .channel("order-changes")
       .on(
@@ -36,7 +37,10 @@ const OrderTracking = () => {
           table: "orders",
           filter: `id=eq.${orderId}`
         },
-        (payload) => setOrder(payload.new)
+        (payload) => {
+          console.log("Order updated:", payload.new);
+          setOrder(payload.new);
+        }
       )
       .subscribe();
 
@@ -108,8 +112,11 @@ const OrderTracking = () => {
       <div className="p-4 space-y-6">
         {order && (
           <Card className="p-6 text-center gradient-primary text-white">
+            <div className="text-5xl mb-3">
+              {getOrderStatusEmoji(order.status)}
+            </div>
             <h2 className="text-2xl font-bold mb-2">
-              {getStatusMessage(order.status)}
+              {getHumanOrderStatus(order.status, "Delivery Partner")}
             </h2>
             <p className="text-white/90">Estimated delivery: 25-30 minutes</p>
           </Card>

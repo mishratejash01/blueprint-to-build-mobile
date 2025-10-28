@@ -7,6 +7,7 @@ import { ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import { playOrderSound, showNotification, requestNotificationPermission } from "@/utils/notifications";
 
 const StoreOrders = () => {
   const navigate = useNavigate();
@@ -14,9 +15,10 @@ const StoreOrders = () => {
   const [orders, setOrders] = useState<any[]>([]);
 
   useEffect(() => {
+    requestNotificationPermission();
     fetchOrders();
 
-    // Subscribe to order changes
+    // Subscribe to real-time order changes
     const channel = supabase
       .channel("store-orders")
       .on(
@@ -26,7 +28,17 @@ const StoreOrders = () => {
           schema: "public",
           table: "orders"
         },
-        () => fetchOrders()
+        (payload) => {
+          console.log("Order event:", payload);
+          if (payload.eventType === "INSERT") {
+            playOrderSound();
+            showNotification(
+              "New Order! 🎉",
+              `Order #${payload.new.id.slice(0, 8)} - ₹${payload.new.total}`
+            );
+          }
+          fetchOrders();
+        }
       )
       .subscribe();
 

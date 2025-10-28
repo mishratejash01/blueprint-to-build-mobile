@@ -8,6 +8,7 @@ import Splash from "./pages/Splash";
 import Onboarding from "./pages/Onboarding";
 import Location from "./pages/Location";
 import Home from "./pages/Home";
+import Search from "./pages/Search";
 import Auth from "./pages/Auth";
 import ProductDetails from "./pages/ProductDetails";
 import Cart from "./pages/Cart";
@@ -37,6 +38,7 @@ const App = () => (
             <Route path="/location" element={<Location />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/home" element={<Home />} />
+            <Route path="/search" element={<Search />} />
             <Route path="/product/:productId" element={<ProductDetails />} />
             <Route path="/cart" element={<Cart />} />
             <Route path="/checkout" element={<Checkout />} />

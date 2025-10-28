@@ -2,10 +2,12 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ArrowLeft, MapPin } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { ArrowLeft, MapPin, Navigation } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import { playOrderSound } from "@/utils/notifications";
 
 const PartnerOrders = () => {
   const navigate = useNavigate();
@@ -16,7 +18,7 @@ const PartnerOrders = () => {
   useEffect(() => {
     fetchOrders();
 
-    // Subscribe to order changes
+    // Subscribe to real-time order changes
     const channel = supabase
       .channel("partner-orders")
       .on(
@@ -26,7 +28,13 @@ const PartnerOrders = () => {
           schema: "public",
           table: "orders"
         },
-        () => fetchOrders()
+        (payload) => {
+          console.log("Order changed:", payload);
+          if (payload.eventType === "INSERT" && payload.new.status === "ready_for_pickup") {
+            playOrderSound();
+          }
+          fetchOrders();
+        }
       )
       .subscribe();
 
@@ -136,7 +144,7 @@ const PartnerOrders = () => {
                 <div className="space-y-2 mb-4">
                   <div className="flex items-start gap-2">
                     <MapPin className="w-4 h-4 mt-1 text-muted-foreground" />
-                    <div>
+                    <div className="flex-1">
                       <p className="text-sm font-semibold">Pickup:</p>
                       <p className="text-sm text-muted-foreground">
                         {order.stores?.address || "Store address"}
@@ -146,21 +154,46 @@ const PartnerOrders = () => {
                   
                   <div className="flex items-start gap-2">
                     <MapPin className="w-4 h-4 mt-1 text-accent" />
-                    <div>
+                    <div className="flex-1">
                       <p className="text-sm font-semibold">Delivery:</p>
                       <p className="text-sm text-muted-foreground">
                         {order.delivery_address}
                       </p>
                     </div>
                   </div>
+
+                  <div className="bg-primary/5 rounded-lg p-3 mt-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-semibold">Earnings:</span>
+                      <span className="text-lg font-bold text-primary">₹50</span>
+                    </div>
+                    <div className="flex justify-between items-center mt-1">
+                      <span className="text-sm text-muted-foreground">Distance:</span>
+                      <span className="text-sm font-semibold">~3 km</span>
+                    </div>
+                  </div>
                 </div>
 
-                <Button
-                  onClick={() => handleAcceptOrder(order.id)}
-                  className="w-full"
-                >
-                  Accept Order
-                </Button>
+                <div className="space-y-2">
+                  <Button
+                    onClick={() => handleAcceptOrder(order.id)}
+                    className="w-full"
+                  >
+                    Accept Order
+                  </Button>
+                  
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => {
+                      const address = encodeURIComponent(order.stores?.address || "");
+                      window.open(`https://www.google.com/maps/dir/?api=1&destination=${address}`, '_blank');
+                    }}
+                  >
+                    <Navigation className="w-4 h-4 mr-2" />
+                    View Route
+                  </Button>
+                </div>
               </Card>
             ))
           )}
