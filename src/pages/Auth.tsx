@@ -1,0 +1,242 @@
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Leaf } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import type { Session } from "@supabase/supabase-js";
+
+const Auth = () => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [session, setSession] = useState<Session | null>(null);
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [searchParams] = useSearchParams();
+  const userType = searchParams.get("type") || "customer";
+
+  useEffect(() => {
+    // Set up auth state listener first
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setSession(session);
+      if (session) {
+        // Redirect based on user type
+        if (userType === "store") {
+          navigate("/store/dashboard");
+        } else if (userType === "partner") {
+          navigate("/partner/dashboard");
+        } else {
+          navigate("/home");
+        }
+      }
+    });
+
+    // Then check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      if (session) {
+        if (userType === "store") {
+          navigate("/store/dashboard");
+        } else if (userType === "partner") {
+          navigate("/partner/dashboard");
+        } else {
+          navigate("/home");
+        }
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate, userType]);
+
+  const handleSignUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    const redirectUrl = `${window.location.origin}/auth?type=${userType}`;
+    
+    const role = userType === "store" ? "store_manager" : userType === "partner" ? "delivery_partner" : "customer";
+    
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: redirectUrl,
+        data: {
+          full_name: fullName,
+          phone: phone,
+          role: role
+        }
+      }
+    });
+
+    setLoading(false);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive"
+      });
+    } else {
+      toast({
+        title: "Success!",
+        description: "Account created successfully. Please check your email."
+      });
+    }
+  };
+
+  const handleSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    });
+
+    setLoading(false);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  };
+
+  const getTitle = () => {
+    if (userType === "store") return "Store Manager";
+    if (userType === "partner") return "Delivery Partner";
+    return "Customer";
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-subtle p-4">
+      <Card className="w-full max-w-md p-6">
+        <div className="flex flex-col items-center mb-6">
+          <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+            <Leaf className="w-8 h-8 text-primary" />
+          </div>
+          <h1 className="text-2xl font-bold">Welcome to Veggieit</h1>
+          <p className="text-muted-foreground">{getTitle()} Login</p>
+        </div>
+
+        <Tabs defaultValue="signin" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="signin">Sign In</TabsTrigger>
+            <TabsTrigger value="signup">Sign Up</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="signin">
+            <form onSubmit={handleSignIn} className="space-y-4">
+              <div>
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+              </div>
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? "Signing in..." : "Sign In"}
+              </Button>
+            </form>
+          </TabsContent>
+
+          <TabsContent value="signup">
+            <form onSubmit={handleSignUp} className="space-y-4">
+              <div>
+                <Label htmlFor="fullName">Full Name</Label>
+                <Input
+                  id="fullName"
+                  type="text"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="phone">Phone Number</Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="signupEmail">Email</Label>
+                <Input
+                  id="signupEmail"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="signupPassword">Password</Label>
+                <Input
+                  id="signupPassword"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  minLength={6}
+                />
+              </div>
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? "Creating account..." : "Sign Up"}
+              </Button>
+            </form>
+          </TabsContent>
+        </Tabs>
+
+        {userType === "customer" && (
+          <div className="mt-6 text-center space-y-2">
+            <p className="text-sm text-muted-foreground">Are you a:</p>
+            <div className="flex gap-2 justify-center">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate("/auth?type=store")}
+              >
+                Store Manager
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate("/auth?type=partner")}
+              >
+                Delivery Partner
+              </Button>
+            </div>
+          </div>
+        )}
+      </Card>
+    </div>
+  );
+};
+
+export default Auth;

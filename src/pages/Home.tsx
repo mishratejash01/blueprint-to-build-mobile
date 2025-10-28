@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -13,8 +13,12 @@ import {
   Milk, 
   Egg,
   Pizza,
-  Coffee
+  Coffee,
+  User
 } from "lucide-react";
+import { useCart } from "@/contexts/CartContext";
+import { supabase } from "@/integrations/supabase/client";
+import ProtectedRoute from "@/components/ProtectedRoute";
 
 const categories = [
   { id: "vegetables", name: "Vegetables", icon: Carrot, color: "bg-green-100 text-green-700" },
@@ -25,17 +29,26 @@ const categories = [
   { id: "beverages", name: "Beverages", icon: Coffee, color: "bg-purple-100 text-purple-700" },
 ];
 
-const popularProducts = [
-  { id: 1, name: "Fresh Tomatoes", price: 45, unit: "per kg", image: "🍅", discount: 10 },
-  { id: 2, name: "Organic Bananas", price: 60, unit: "per dozen", image: "🍌", discount: 0 },
-  { id: 3, name: "Amul Taaza Milk", price: 28, unit: "500ml", image: "🥛", discount: 5 },
-  { id: 4, name: "Fresh Spinach", price: 30, unit: "per bunch", image: "🥬", discount: 0 },
-];
-
 const Home = () => {
-  const [cartCount] = useState(0);
+  const { itemCount } = useCart();
+  const [products, setProducts] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      const { data } = await supabase
+        .from("products")
+        .select("*")
+        .eq("is_available", true)
+        .limit(8);
+      
+      setProducts(data || []);
+    };
+
+    fetchProducts();
+  }, []);
 
   return (
+    <ProtectedRoute>
     <div className="min-h-screen bg-gradient-subtle pb-20">
       {/* Header */}
       <div className="bg-white shadow-soft sticky top-0 z-10">
@@ -52,9 +65,9 @@ const Home = () => {
             <Link to="/cart">
               <Button variant="outline" size="icon" className="relative">
                 <ShoppingCart className="w-5 h-5" />
-                {cartCount > 0 && (
+                {itemCount > 0 && (
                   <Badge className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 flex items-center justify-center bg-accent">
-                    {cartCount}
+                    {itemCount}
                   </Badge>
                 )}
               </Button>
@@ -113,18 +126,13 @@ const Home = () => {
         </div>
         
         <div className="grid grid-cols-2 gap-4">
-          {popularProducts.map((product) => (
+          {products.map((product) => (
             <Link key={product.id} to={`/product/${product.id}`}>
               <Card className="overflow-hidden hover-lift cursor-pointer">
                 <div className="aspect-square bg-muted flex items-center justify-center text-6xl">
                   {product.image}
                 </div>
                 <div className="p-3">
-                  {product.discount > 0 && (
-                    <Badge className="mb-2 bg-accent text-xs">
-                      {product.discount}% OFF
-                    </Badge>
-                  )}
                   <h3 className="font-semibold text-sm mb-1">{product.name}</h3>
                   <p className="text-xs text-muted-foreground mb-2">{product.unit}</p>
                   <div className="flex items-center justify-between">
@@ -154,12 +162,13 @@ const Home = () => {
             <span className="text-xs">Cart</span>
           </Button>
           <Button variant="ghost" className="flex-col h-auto py-2">
-            <MapPin className="w-5 h-5 mb-1" />
+            <User className="w-5 h-5 mb-1" />
             <span className="text-xs">Profile</span>
           </Button>
         </div>
       </div>
     </div>
+    </ProtectedRoute>
   );
 };
 
