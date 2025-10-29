@@ -25,7 +25,7 @@ const ProductGrid = ({ products, title = "Best Sellers" }: ProductGridProps) => 
       )}
       
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        {products.map((product, index) => (
+        {products.filter(p => p?.id).map((product, index) => (
           <div 
             key={product.id} 
             className="animate-fade-in"

@@ -25,7 +25,7 @@ const CategoryScroll = ({ categories, title = "Shop by Category" }: CategoryScro
       
       <ScrollArea className="w-full whitespace-nowrap">
         <div className="flex gap-3 px-4 pb-2">
-          {categories.map((category, index) => (
+          {categories.filter(cat => cat?.id).map((category, index) => (
             <Link 
               key={category.id} 
               to={`/category/${category.id}`}

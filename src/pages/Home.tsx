@@ -20,25 +20,43 @@ const Home = () => {
   }, []);
 
   const fetchCategories = async () => {
-    const { data } = await supabase
-      .from("categories")
-      .select("*")
-      .order("sort_order", { ascending: true })
-      .limit(12);
-    
-    if (data) {
-      setCategories(data);
+    try {
+      const { data, error } = await supabase
+        .from("categories")
+        .select("*")
+        .order("sort_order", { ascending: true })
+        .limit(12);
+      
+      if (error) {
+        console.error("Error fetching categories:", error);
+        return;
+      }
+      
+      if (data) {
+        setCategories(data.filter(cat => cat?.id));
+      }
+    } catch (error) {
+      console.error("Error in fetchCategories:", error);
     }
   };
 
   const fetchProducts = async () => {
-    const { data } = await supabase
-      .from("products")
-      .select("*")
-      .eq("is_available", true)
-      .limit(8);
-    
-    setProducts(data || []);
+    try {
+      const { data, error } = await supabase
+        .from("products")
+        .select("*")
+        .eq("is_available", true)
+        .limit(8);
+      
+      if (error) {
+        console.error("Error fetching products:", error);
+        return;
+      }
+      
+      setProducts((data || []).filter(p => p?.id));
+    } catch (error) {
+      console.error("Error in fetchProducts:", error);
+    }
   };
 
   return (
