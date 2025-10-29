@@ -40,6 +40,11 @@ const ActiveDelivery = () => {
         variant: "destructive"
       });
     } else {
+      // Sync updated order status to Google Sheets
+      supabase.functions.invoke('sync-orders-to-sheet', {
+        body: { order_id: orderId }
+      }).catch(err => console.error('Failed to sync to sheets:', err));
+      
       toast({
         title: "Order delivered!",
         description: "Great job! You can now accept more orders."
