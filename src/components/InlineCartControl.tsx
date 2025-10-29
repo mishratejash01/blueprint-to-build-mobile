@@ -88,11 +88,10 @@ const InlineCartControl = ({ product, onAdd }: InlineCartControlProps) => {
       <>
         <Button
           size="sm"
-          className="h-9 px-5 gradient-primary hover:opacity-90 shadow-md hover:shadow-lg transition-all hover:scale-105 text-sm font-semibold relative overflow-hidden group"
+          className="h-9 px-6 bg-primary hover:bg-[hsl(var(--primary-hover))] text-white font-medium text-xs uppercase tracking-wide rounded-lg shadow-sm hover:shadow-md transition-all active:scale-95"
           onClick={handleAddToCart}
         >
-          <span className="absolute inset-0 bg-white opacity-0 group-hover:opacity-20 transition-opacity"></span>
-          <span className="relative">Add</span>
+          ADD
         </Button>
         
         <AddToCartAnimation
@@ -108,7 +107,7 @@ const InlineCartControl = ({ product, onAdd }: InlineCartControlProps) => {
 
   return (
     <div 
-      className="flex items-center gap-2 bg-primary/10 rounded-lg p-1 shadow-md animate-scale-in"
+      className="flex items-center gap-1.5 bg-primary rounded-lg p-0.5 shadow-sm animate-scale-in"
       onClick={(e) => {
         e.stopPropagation();
         e.preventDefault();
@@ -117,23 +116,23 @@ const InlineCartControl = ({ product, onAdd }: InlineCartControlProps) => {
       <Button
         size="icon"
         variant="ghost"
-        className="h-7 w-7 rounded-md hover:bg-destructive/20 hover:text-destructive transition-all hover:scale-110 active:scale-95"
+        className="h-7 w-7 rounded-md hover:bg-white/20 text-white transition-all active:scale-90"
         onClick={handleDecrement}
       >
-        <Minus className="h-4 w-4" strokeWidth={2.5} />
+        <Minus className="h-3.5 w-3.5" strokeWidth={3} />
       </Button>
       
-      <span className="min-w-[28px] text-center font-bold text-primary text-sm animate-fade-in">
+      <span className="min-w-[24px] text-center font-bold text-white text-sm">
         {quantity}
       </span>
       
       <Button
         size="icon"
         variant="ghost"
-        className="h-7 w-7 rounded-md hover:bg-primary/20 hover:text-primary transition-all hover:scale-110 active:scale-95"
+        className="h-7 w-7 rounded-md hover:bg-white/20 text-white transition-all active:scale-90"
         onClick={handleIncrement}
       >
-        <Plus className="h-4 w-4" strokeWidth={2.5} />
+        <Plus className="h-3.5 w-3.5" strokeWidth={3} />
       </Button>
     </div>
   );

@@ -13,35 +13,44 @@
     --popover: 0 0% 100%;
     --popover-foreground: 215 25% 15%;
     
-    /* Veggieit Brand Colors */
-    --primary: 160 84% 39%; /* Fresh Green #10B981 */
+    /* Veggieit Brand Colors - Blinkit-inspired */
+    --primary: 142 76% 36%; /* Vibrant Fresh Green #00B34A */
     --primary-foreground: 0 0% 100%;
-    --primary-glow: 160 84% 55%;
+    --primary-glow: 142 76% 50%;
+    --primary-hover: 142 76% 32%;
     
-    --secondary: 215 25% 15%; /* Deep Navy #1E293B */
+    --secondary: 0 0% 20%; /* Dark Charcoal #333333 */
     --secondary-foreground: 0 0% 100%;
     
-    --accent: 25 95% 53%; /* Vibrant Orange #F97316 */
+    --accent: 142 76% 36%; /* Match primary for consistency */
     --accent-foreground: 0 0% 100%;
     
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215 16% 47%;
+    --muted: 0 0% 98%; /* Very light grey #FAFAFA */
+    --muted-foreground: 0 0% 40%; /* Medium grey #666666 */
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 160 84% 39%;
+    --border: 0 0% 93%; /* Light grey #EEEEEE */
+    --input: 0 0% 96%; /* #F5F5F7 */
+    --ring: 142 76% 36%;
     --radius: 0.75rem;
     
-    /* Veggieit Custom Design Tokens */
-    --gradient-primary: linear-gradient(135deg, hsl(160 84% 39%), hsl(160 84% 55%));
-    --gradient-accent: linear-gradient(135deg, hsl(25 95% 53%), hsl(35 95% 60%));
-    --gradient-subtle: linear-gradient(180deg, hsl(0 0% 100%), hsl(160 20% 98%));
+    /* Additional tokens for premium design */
+    --card-elevated: 0 0% 100%;
+    --text-primary: 0 0% 13%; /* #212121 */
+    --text-secondary: 0 0% 46%; /* #757575 */
     
-    --shadow-soft: 0 2px 8px hsl(215 25% 15% / 0.08);
-    --shadow-medium: 0 4px 16px hsl(215 25% 15% / 0.12);
-    --shadow-strong: 0 8px 24px hsl(215 25% 15% / 0.16);
-    --shadow-primary: 0 4px 16px hsl(160 84% 39% / 0.24);
+    /* Veggieit Custom Design Tokens - Premium shadows and gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(142 76% 36%), hsl(142 76% 50%));
+    --gradient-accent: linear-gradient(135deg, hsl(142 76% 36%), hsl(142 76% 44%));
+    --gradient-subtle: linear-gradient(180deg, hsl(0 0% 100%), hsl(0 0% 98%));
+    
+    /* Blinkit-style subtle shadows */
+    --shadow-soft: 0 2px 8px rgba(0, 0, 0, 0.04);
+    --shadow-card: 0 4px 12px rgba(0, 0, 0, 0.05);
+    --shadow-card-hover: 0 6px 20px rgba(0, 0, 0, 0.08);
+    --shadow-medium: 0 4px 16px rgba(0, 0, 0, 0.06);
+    --shadow-strong: 0 8px 24px rgba(0, 0, 0, 0.1);
+    --shadow-primary: 0 4px 16px rgba(0, 179, 74, 0.15);
     
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     --transition-fast: all 0.15s ease;
@@ -120,16 +129,44 @@
   }
   
   .card-elevated {
-    box-shadow: var(--shadow-medium);
+    box-shadow: var(--shadow-card);
+    transition: all 0.2s ease;
+  }
+  
+  .card-elevated:hover {
+    box-shadow: var(--shadow-card-hover);
+    transform: translateY(-2px);
   }
   
   .hover-lift {
-    @apply transition-all duration-300 hover:scale-[1.02];
-    box-shadow: var(--shadow-medium);
+    @apply transition-all duration-200 ease-in-out;
+    box-shadow: var(--shadow-card);
   }
   
   .hover-lift:hover {
-    box-shadow: var(--shadow-strong);
+    box-shadow: var(--shadow-card-hover);
+    transform: translateY(-4px);
+  }
+  
+  .category-card {
+    @apply transition-all duration-200 ease-in-out;
+    box-shadow: var(--shadow-soft);
+  }
+  
+  .category-card:hover {
+    box-shadow: var(--shadow-card);
+    transform: translateY(-2px) scale(1.02);
+  }
+  
+  .product-card {
+    @apply transition-all duration-200 ease-in-out bg-white;
+    box-shadow: var(--shadow-card);
+    border-radius: 12px;
+  }
+  
+  .product-card:hover {
+    box-shadow: var(--shadow-card-hover);
+    transform: translateY(-4px);
   }
   
   .pulse-delivery {
@@ -185,14 +222,25 @@
   
   @keyframes scale-in {
     0% { 
-      transform: scale(0.8);
+      transform: scale(0.9);
       opacity: 0;
     }
-    50% {
-      transform: scale(1.05);
+    60% {
+      transform: scale(1.03);
     }
     100% { 
       transform: scale(1);
+      opacity: 1;
+    }
+  }
+  
+  @keyframes slide-in-left {
+    0% {
+      transform: translateX(-20px);
+      opacity: 0;
+    }
+    100% {
+      transform: translateX(0);
       opacity: 1;
     }
   }
