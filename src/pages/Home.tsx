@@ -20,32 +20,53 @@ import { useCart } from "@/contexts/CartContext";
 import { supabase } from "@/integrations/supabase/client";
 import ProtectedRoute from "@/components/ProtectedRoute";
 
-const categories = [
-  { id: "vegetables", name: "Vegetables", icon: Carrot, color: "bg-green-100 text-green-700" },
-  { id: "fruits", name: "Fruits", icon: Apple, color: "bg-red-100 text-red-700" },
-  { id: "dairy", name: "Dairy", icon: Milk, color: "bg-blue-100 text-blue-700" },
-  { id: "eggs", name: "Eggs & Meat", icon: Egg, color: "bg-yellow-100 text-yellow-700" },
-  { id: "snacks", name: "Snacks", icon: Pizza, color: "bg-orange-100 text-orange-700" },
-  { id: "beverages", name: "Beverages", icon: Coffee, color: "bg-purple-100 text-purple-700" },
-];
+const iconMap: any = {
+  "Vegetables": Carrot,
+  "Fruits": Apple,
+  "Dairy": Milk,
+  "Eggs & Meat": Egg,
+  "Snacks": Pizza,
+  "Beverages": Coffee,
+};
+
+const colorMap: any = {
+  "Vegetables": "bg-green-100 text-green-700",
+  "Fruits": "bg-red-100 text-red-700",
+  "Dairy": "bg-blue-100 text-blue-700",
+  "Eggs & Meat": "bg-yellow-100 text-yellow-700",
+  "Snacks": "bg-orange-100 text-orange-700",
+  "Beverages": "bg-purple-100 text-purple-700",
+};
 
 const Home = () => {
   const { itemCount } = useCart();
   const [products, setProducts] = useState<any[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
 
   useEffect(() => {
-    const fetchProducts = async () => {
-      const { data } = await supabase
-        .from("products")
-        .select("*")
-        .eq("is_available", true)
-        .limit(8);
-      
-      setProducts(data || []);
-    };
-
+    fetchCategories();
     fetchProducts();
   }, []);
+
+  const fetchCategories = async () => {
+    const { data } = await supabase
+      .from("categories")
+      .select("*")
+      .is("parent_id", null)
+      .order("name");
+    
+    setCategories(data || []);
+  };
+
+  const fetchProducts = async () => {
+    const { data } = await supabase
+      .from("products")
+      .select("*")
+      .eq("is_available", true)
+      .limit(8);
+    
+    setProducts(data || []);
+  };
 
   return (
     <ProtectedRoute>
@@ -92,13 +113,22 @@ const Home = () => {
         <h2 className="text-xl font-bold mb-4">Shop by Category</h2>
         <div className="grid grid-cols-3 gap-3">
           {categories.map((category) => {
-            const Icon = category.icon;
+            const Icon = iconMap[category.name] || Carrot;
+            const color = colorMap[category.name] || "bg-gray-100 text-gray-700";
             return (
-              <Link key={category.id} to={`/category/${category.id}`}>
+              <Link key={category.id} to={`/category/${category.slug}`}>
                 <Card className="p-4 text-center hover-lift cursor-pointer">
-                  <div className={`w-12 h-12 rounded-full ${category.color} flex items-center justify-center mx-auto mb-2`}>
-                    <Icon className="w-6 h-6" />
-                  </div>
+                  {category.image_url ? (
+                    <img 
+                      src={category.image_url} 
+                      alt={category.name}
+                      className="w-12 h-12 mx-auto mb-2 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className={`w-12 h-12 rounded-full ${color} flex items-center justify-center mx-auto mb-2`}>
+                      <Icon className="w-6 h-6" />
+                    </div>
+                  )}
                   <p className="text-sm font-medium">{category.name}</p>
                 </Card>
               </Link>
@@ -161,10 +191,12 @@ const Home = () => {
             <ShoppingCart className="w-5 h-5 mb-1" />
             <span className="text-xs">Cart</span>
           </Button>
-          <Button variant="ghost" className="flex-col h-auto py-2">
-            <User className="w-5 h-5 mb-1" />
-            <span className="text-xs">Profile</span>
-          </Button>
+          <Link to="/profile">
+            <Button variant="ghost" className="flex-col h-auto py-2">
+              <User className="w-5 h-5 mb-1" />
+              <span className="text-xs">Profile</span>
+            </Button>
+          </Link>
         </div>
       </div>
     </div>

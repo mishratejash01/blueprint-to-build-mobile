@@ -21,7 +21,7 @@ const StoreInventory = () => {
     name: "",
     price: "",
     unit: "kg",
-    stock_quantity: "",
+    stock_level: "",
     category: ""
   });
 
@@ -71,7 +71,7 @@ const StoreInventory = () => {
       name: formData.name,
       price: parseFloat(formData.price),
       unit: formData.unit,
-      stock_quantity: parseInt(formData.stock_quantity),
+      stock_level: parseInt(formData.stock_level),
       category: formData.category,
       is_available: true
     };
@@ -112,7 +112,7 @@ const StoreInventory = () => {
 
     setDialogOpen(false);
     setEditingProduct(null);
-    setFormData({ name: "", price: "", unit: "kg", stock_quantity: "", category: "" });
+    setFormData({ name: "", price: "", unit: "kg", stock_level: "", category: "" });
     fetchStoreAndProducts();
   };
 
@@ -122,7 +122,7 @@ const StoreInventory = () => {
       name: product.name,
       price: product.price.toString(),
       unit: product.unit,
-      stock_quantity: product.stock_quantity.toString(),
+      stock_level: product.stock_level.toString(),
       category: product.category || ""
     });
     setDialogOpen(true);
@@ -190,8 +190,8 @@ const StoreInventory = () => {
                     <Input
                       id="stock"
                       type="number"
-                      value={formData.stock_quantity}
-                      onChange={(e) => setFormData({ ...formData, stock_quantity: e.target.value })}
+                      value={formData.stock_level}
+                      onChange={(e) => setFormData({ ...formData, stock_level: e.target.value })}
                       required
                     />
                   </div>
@@ -231,7 +231,7 @@ const StoreInventory = () => {
                       ₹{product.price} per {product.unit}
                     </p>
                     <p className="text-sm">
-                      Stock: {product.stock_quantity}
+                      Stock: {product.stock_level}
                     </p>
                   </div>
                   <Button

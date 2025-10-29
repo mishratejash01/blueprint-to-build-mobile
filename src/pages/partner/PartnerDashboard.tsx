@@ -22,16 +22,15 @@ const PartnerDashboard = () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    // Get delivery partner info
-    const { data: partner } = await supabase
-      .from("delivery_partners")
-      .select("is_available")
+    // Get partner availability from profile
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("partner_data")
       .eq("id", user.id)
       .single();
 
-    if (partner) {
-      setIsAvailable(partner.is_available);
-    }
+    const partnerData = profile?.partner_data as any || {};
+    setIsAvailable(partnerData.is_available || false);
 
     // Get available orders count
     const { count: availableCount } = await supabase
@@ -57,12 +56,24 @@ const PartnerDashboard = () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
+    // Get existing partner_data
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("partner_data")
+      .eq("id", user.id)
+      .single();
+
+    const existingPartnerData = profile?.partner_data as any || {};
+
     const { error } = await supabase
-      .from("delivery_partners")
-      .upsert({
-        id: user.id,
-        is_available: checked
-      });
+      .from("profiles")
+      .update({
+        partner_data: {
+          ...existingPartnerData,
+          is_available: checked,
+        }
+      })
+      .eq("id", user.id);
 
     if (error) {
       toast({
