@@ -48,23 +48,25 @@ const PartnerOrders = () => {
     if (!user) return;
 
     // Get available orders
-    const { data: available } = await (supabase as any)
+    const { data: available, error: availableError } = await (supabase as any)
       .from("orders")
       .select("*, stores(*)")
       .eq("status", "ready_for_pickup")
       .is("delivery_partner_id", null)
       .order("created_at", { ascending: false });
 
+    console.log("Available orders query result:", { available, availableError });
     setAvailableOrders(available || []);
 
     // Get active order
-    const { data: active } = await (supabase as any)
+    const { data: active, error: activeError } = await (supabase as any)
       .from("orders")
       .select("*, stores(*), order_items(*)")
       .eq("delivery_partner_id", user.id)
       .eq("status", "in_transit")
       .single();
 
+    console.log("Active order query result:", { active, activeError });
     setActiveOrder(active);
   };
 
