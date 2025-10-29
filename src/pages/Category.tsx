@@ -89,22 +89,29 @@ const Category = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-20">
-      <div className="sticky top-0 z-10 bg-card border-b">
+    <div className="min-h-screen bg-gradient-subtle pb-20">
+      <div className="sticky top-0 z-10 bg-card/80 backdrop-blur-lg border-b shadow-sm">
         <div className="p-4">
           <div className="flex items-center gap-4 mb-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={() => navigate(-1)}
+              className="hover:bg-primary/10 hover:scale-110 transition-all"
+            >
               <ArrowLeft className="h-5 w-5" />
             </Button>
-            <h1 className="text-xl font-semibold">{categoryName}</h1>
+            <h1 className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+              {categoryName}
+            </h1>
           </div>
           
-          <div className="flex items-center gap-2">
-            <SlidersHorizontal className="h-4 w-4 text-muted-foreground" />
+          <div className="flex items-center gap-2 bg-background/50 rounded-xl p-2 border">
+            <SlidersHorizontal className="h-4 w-4 text-primary ml-2" />
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as any)}
-              className="flex-1 bg-background border rounded-md px-3 py-2 text-sm"
+              className="flex-1 bg-transparent border-none px-2 py-2 text-sm focus:outline-none cursor-pointer"
             >
               <option value="name">Sort by Name</option>
               <option value="price-low">Price: Low to High</option>
@@ -116,46 +123,61 @@ const Category = () => {
 
       <div className="p-4">
         {products.length === 0 ? (
-          <Card>
-            <CardContent className="flex flex-col items-center justify-center py-12">
-              <p className="text-muted-foreground text-center">
-                No products found in this category
+          <Card className="border-none shadow-medium animate-fade-in">
+            <CardContent className="flex flex-col items-center justify-center py-16">
+              <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+                <span className="text-4xl">🔍</span>
+              </div>
+              <p className="text-muted-foreground text-center mb-2 text-lg font-medium">
+                No products found
               </p>
-              <Button className="mt-4" onClick={() => navigate("/home")}>
+              <p className="text-muted-foreground/70 text-sm mb-6">
+                Try browsing other categories
+              </p>
+              <Button 
+                className="gradient-primary hover:opacity-90 shadow-lg"
+                onClick={() => navigate("/home")}
+              >
                 Browse All Products
               </Button>
             </CardContent>
           </Card>
         ) : (
           <div className="grid grid-cols-2 gap-4">
-            {products.map((product) => (
+            {products.map((product, index) => (
               <Card 
                 key={product.id} 
-                className="cursor-pointer hover:shadow-lg transition-shadow"
+                className="group cursor-pointer border-none shadow-soft hover:shadow-strong transition-all duration-300 hover:-translate-y-1 overflow-hidden animate-fade-in"
+                style={{ animationDelay: `${index * 50}ms` }}
                 onClick={() => navigate(`/product/${product.id}`)}
               >
-                <CardContent className="p-3">
-                  <img
-                    src={product.image_url || "/placeholder.svg"}
-                    alt={product.name}
-                    className="w-full h-32 object-cover rounded-md mb-2"
-                  />
-                  <h3 className="font-medium text-sm line-clamp-2 min-h-[2.5rem]">
-                    {product.name}
-                  </h3>
-                  <p className="text-muted-foreground text-xs mb-2">{product.unit}</p>
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-primary">₹{product.price}</span>
-                    <Button
-                      size="sm"
-                      className="h-8"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleAddToCart(product);
-                      }}
-                    >
-                      Add
-                    </Button>
+                <CardContent className="p-0">
+                  <div className="relative overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-primary opacity-0 group-hover:opacity-10 transition-opacity duration-300 z-10"></div>
+                    <img
+                      src={product.image_url || "/placeholder.svg"}
+                      alt={product.name}
+                      className="w-full h-32 object-cover group-hover:scale-110 transition-transform duration-500"
+                    />
+                  </div>
+                  <div className="p-3">
+                    <h3 className="font-semibold text-sm line-clamp-2 min-h-[2.5rem] group-hover:text-primary transition-colors">
+                      {product.name}
+                    </h3>
+                    <p className="text-muted-foreground text-xs mb-3">{product.unit}</p>
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-lg text-primary">₹{product.price}</span>
+                      <Button
+                        size="sm"
+                        className="h-9 px-4 gradient-primary hover:opacity-90 shadow-md hover:shadow-lg transition-all hover:scale-105"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleAddToCart(product);
+                        }}
+                      >
+                        Add
+                      </Button>
+                    </div>
                   </div>
                 </CardContent>
               </Card>

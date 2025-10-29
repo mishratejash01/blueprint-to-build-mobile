@@ -54,57 +54,64 @@ const Location = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-background p-6">
-      <div className="flex-1 flex flex-col items-center justify-center max-w-md mx-auto w-full">
+    <div className="min-h-screen flex flex-col gradient-subtle relative overflow-hidden">
+      {/* Animated Background Elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-20 -left-20 w-72 h-72 bg-primary/10 rounded-full blur-3xl animate-float"></div>
+        <div className="absolute bottom-20 -right-20 w-96 h-96 bg-accent/10 rounded-full blur-3xl animate-float-delayed"></div>
+      </div>
+
+      <div className="flex-1 flex flex-col items-center justify-center max-w-md mx-auto w-full px-6 py-8 relative z-10">
         <div className="text-center mb-12 animate-fade-in">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary/10 mb-6">
-            <MapPin className="w-10 h-10 text-primary" />
+          <div className="relative inline-flex items-center justify-center w-24 h-24 rounded-full bg-gradient-primary mb-8 shadow-primary animate-scale-in">
+            <div className="absolute inset-0 rounded-full bg-primary/20 animate-ping"></div>
+            <MapPin className="w-12 h-12 text-white relative z-10" strokeWidth={2} />
           </div>
           
-          <h1 className="text-3xl font-bold text-foreground mb-3">
+          <h1 className="text-4xl font-bold text-foreground mb-4 tracking-tight">
             Choose Your Location
           </h1>
           
-          <p className="text-muted-foreground text-lg">
-            To find the freshest items closest to you
+          <p className="text-muted-foreground text-lg leading-relaxed">
+            To find the <span className="text-primary font-semibold">freshest items</span> closest to you
           </p>
         </div>
 
-        <div className="w-full space-y-4">
+        <div className="w-full space-y-5 animate-slide-up">
           <Button
             onClick={handleUseCurrentLocation}
             disabled={loading}
             size="lg"
-            className="w-full btn-touch gradient-primary hover:opacity-90"
+            className="w-full btn-touch gradient-primary hover:opacity-90 hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl group relative overflow-hidden"
           >
-            <Navigation className="mr-2" />
-            {loading ? "Detecting..." : "Use Current Location"}
+            <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
+            <Navigation className="mr-2 relative z-10 group-hover:rotate-12 transition-transform" />
+            <span className="relative z-10">{loading ? "Detecting..." : "Use Current Location"}</span>
           </Button>
 
-          <div className="relative">
+          <div className="relative py-4">
             <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t" />
+              <span className="w-full border-t border-border/50" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">Or</span>
+              <span className="bg-background/80 backdrop-blur-sm px-4 py-1 text-muted-foreground rounded-full border">Or enter manually</span>
             </div>
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-4 p-6 bg-card/50 backdrop-blur-sm rounded-2xl border shadow-soft hover-lift">
             <Input
               type="text"
               placeholder="Enter your delivery address"
               value={address}
               onChange={(e) => setAddress(e.target.value)}
-              className="h-12"
+              className="h-12 border-border/50 focus:border-primary transition-all duration-300"
             />
             
             <Button
               onClick={handleConfirmAddress}
               disabled={!address.trim()}
               size="lg"
-              variant="outline"
-              className="w-full btn-touch"
+              className="w-full btn-touch bg-card border-2 border-primary/20 text-primary hover:bg-primary hover:text-white hover:border-primary transition-all duration-300 disabled:opacity-50 disabled:hover:bg-card disabled:hover:text-primary"
             >
               Confirm Address
             </Button>
