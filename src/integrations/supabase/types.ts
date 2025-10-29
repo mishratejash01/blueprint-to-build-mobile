@@ -323,10 +323,10 @@ export type Database = {
     }
     Functions: {
       accept_order: {
-        Args: { order_id_to_accept: number }
+        Args: { order_id_to_accept: string }
         Returns: {
-          id: number
-          partner_id: string
+          delivery_partner_id: string
+          id: string
           status: Database["public"]["Enums"]["order_status"]
         }[]
       }

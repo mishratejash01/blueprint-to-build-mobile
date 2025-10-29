@@ -14,9 +14,16 @@ const OrderTracking = () => {
 
   useEffect(() => {
     const fetchOrder = async () => {
-      const { data } = await supabase
+      const { data } = await (supabase as any)
         .from("orders")
-        .select("*")
+        .select(`
+          *,
+          partner:profiles!delivery_partner_id(
+            full_name,
+            phone,
+            partner_data
+          )
+        `)
         .eq("id", orderId)
         .single();
 
@@ -161,6 +168,29 @@ const OrderTracking = () => {
             })}
           </div>
         </Card>
+
+        {order?.partner && (
+          <Card className="p-4 bg-primary/5 border-primary/20">
+            <h3 className="font-bold mb-3">Your Delivery Partner</h3>
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                <Truck className="w-6 h-6 text-primary" />
+              </div>
+              <div>
+                <p className="font-semibold">{order.partner.full_name}</p>
+                <p className="text-sm text-muted-foreground">
+                  {order.partner.phone}
+                </p>
+              </div>
+            </div>
+            {order.partner.partner_data?.vehicle_type && (
+              <p className="text-sm text-muted-foreground">
+                Vehicle: {order.partner.partner_data.vehicle_type} • 
+                {order.partner.partner_data.vehicle_plate}
+              </p>
+            )}
+          </Card>
+        )}
 
         {order && (
           <Card className="p-4">

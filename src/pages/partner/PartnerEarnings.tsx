@@ -38,7 +38,7 @@ const PartnerEarnings = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { data: orders } = await supabase
+      const { data: orders } = await (supabase as any)
         .from("orders")
         .select("delivery_fee, created_at, status")
         .eq("delivery_partner_id", user.id)

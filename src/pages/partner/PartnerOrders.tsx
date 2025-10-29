@@ -48,7 +48,7 @@ const PartnerOrders = () => {
     if (!user) return;
 
     // Get available orders
-    const { data: available } = await supabase
+    const { data: available } = await (supabase as any)
       .from("orders")
       .select("*, stores(*)")
       .eq("status", "ready_for_pickup")
@@ -58,7 +58,7 @@ const PartnerOrders = () => {
     setAvailableOrders(available || []);
 
     // Get active order
-    const { data: active } = await supabase
+    const { data: active } = await (supabase as any)
       .from("orders")
       .select("*, stores(*), order_items(*)")
       .eq("delivery_partner_id", user.id)
@@ -68,7 +68,7 @@ const PartnerOrders = () => {
     setActiveOrder(active);
   };
 
-  const handleAcceptOrder = async (orderId: number) => {
+  const handleAcceptOrder = async (orderId: string) => {
     const { data, error } = await supabase.rpc('accept_order', {
       order_id_to_accept: orderId
     });

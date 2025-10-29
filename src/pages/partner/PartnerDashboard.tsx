@@ -33,14 +33,14 @@ const PartnerDashboard = () => {
     setIsAvailable(partnerData.is_available || false);
 
     // Get available orders count
-    const { count: availableCount } = await supabase
+    const { count: availableCount } = await (supabase as any)
       .from("orders")
       .select("*", { count: "exact", head: true })
       .eq("status", "ready_for_pickup")
       .is("delivery_partner_id", null);
 
     // Get completed deliveries count
-    const { count: completedCount } = await supabase
+    const { count: completedCount } = await (supabase as any)
       .from("orders")
       .select("*", { count: "exact", head: true })
       .eq("delivery_partner_id", user.id)
