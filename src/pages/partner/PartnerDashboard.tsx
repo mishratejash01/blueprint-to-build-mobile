@@ -23,13 +23,13 @@ const PartnerDashboard = () => {
     if (!user) return;
 
     // Get partner availability from profile
-    const { data: profile } = await supabase
+    const { data: profile } = await (supabase as any)
       .from("profiles")
       .select("partner_data")
       .eq("id", user.id)
       .single();
 
-    const partnerData = profile?.partner_data as any || {};
+    const partnerData = (profile as any)?.partner_data || {};
     setIsAvailable(partnerData.is_available || false);
 
     // Get available orders count
@@ -57,22 +57,22 @@ const PartnerDashboard = () => {
     if (!user) return;
 
     // Get existing partner_data
-    const { data: profile } = await supabase
+    const { data: profile } = await (supabase as any)
       .from("profiles")
       .select("partner_data")
       .eq("id", user.id)
       .single();
 
-    const existingPartnerData = profile?.partner_data as any || {};
+    const existingPartnerData = (profile as any)?.partner_data || {};
 
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from("profiles")
       .update({
         partner_data: {
           ...existingPartnerData,
           is_available: checked,
         }
-      })
+      } as any)
       .eq("id", user.id);
 
     if (error) {
