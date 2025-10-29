@@ -68,24 +68,19 @@ const PartnerOrders = () => {
     setActiveOrder(active);
   };
 
-  const handleAcceptOrder = async (orderId: string) => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    const { error } = await supabase
-      .from("orders")
-      .update({
-        delivery_partner_id: user.id,
-        status: "in_transit"
-      })
-      .eq("id", orderId);
+  const handleAcceptOrder = async (orderId: number) => {
+    const { data, error } = await supabase.rpc('accept_order', {
+      order_id_to_accept: orderId
+    });
 
     if (error) {
       toast({
-        title: "Error",
-        description: error.message,
+        title: "Order unavailable",
+        description: "Sorry, this order was just taken by another partner",
         variant: "destructive"
       });
+      // Refresh the orders list
+      fetchOrders();
     } else {
       toast({
         title: "Order accepted!",

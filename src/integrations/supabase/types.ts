@@ -305,7 +305,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      accept_order: {
+        Args: { order_id_to_accept: number }
+        Returns: {
+          id: number
+          partner_id: string
+          status: Database["public"]["Enums"]["order_status"]
+        }[]
+      }
     }
     Enums: {
       order_status:
