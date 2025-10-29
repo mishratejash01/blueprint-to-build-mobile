@@ -64,7 +64,7 @@ const Checkout = () => {
       const deliveryFee = 20;
       const totalAmount = total + deliveryFee;
 
-      // Create order - set to ready_for_pickup so partners can see it
+      // Create order - automatically set to ready_for_pickup via database trigger
       const { data: order, error: orderError } = await supabase
         .from("orders")
         .insert({
@@ -74,7 +74,6 @@ const Checkout = () => {
           subtotal: total,
           delivery_fee: deliveryFee,
           total: totalAmount,
-          status: "ready_for_pickup",
           payment_status: "pending"
         })
         .select()
