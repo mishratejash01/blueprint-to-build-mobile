@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import InlineCartControl from "./InlineCartControl";
+import { getProductImage } from "@/lib/productImages";
 
 interface Product {
   id: string;
@@ -32,7 +33,13 @@ const ProductGrid = ({ products = [], title = "Best Sellers" }: ProductGridProps
       )}
       
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        {validProducts.map((product, index) => (
+        {validProducts.map((product, index) => {
+          // Try to get image from local assets first, fall back to database URL
+          const productKey = product.name.toLowerCase().replace(/\s+/g, '-');
+          const localImage = getProductImage(productKey);
+          const productImage = localImage || product.image_url;
+          
+          return (
           <div 
             key={product.id} 
             className="animate-fade-in"
@@ -42,9 +49,9 @@ const ProductGrid = ({ products = [], title = "Best Sellers" }: ProductGridProps
               <Card className="product-card group overflow-hidden border border-border">
                 {/* Product Image */}
                 <div className="relative aspect-square bg-white p-4 border-b border-border">
-                  {product.image_url ? (
+                  {productImage ? (
                     <img 
-                      src={product.image_url} 
+                      src={productImage} 
                       alt={product.name}
                       className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
                     />
@@ -75,7 +82,7 @@ const ProductGrid = ({ products = [], title = "Best Sellers" }: ProductGridProps
               </Card>
             </Link>
           </div>
-        ))}
+        )})}
       </div>
     </div>
   );
