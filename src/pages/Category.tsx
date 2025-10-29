@@ -23,23 +23,38 @@ const Category = () => {
   const navigate = useNavigate();
   const { addItem } = useCart();
   const [products, setProducts] = useState<Product[]>([]);
+  const [categoryName, setCategoryName] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [animatingProductId, setAnimatingProductId] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<"name" | "price-low" | "price-high">("name");
 
   useEffect(() => {
-    fetchProducts();
+    fetchCategoryAndProducts();
   }, [categoryId, sortBy]);
 
-  const fetchProducts = async () => {
+  const fetchCategoryAndProducts = async () => {
     try {
+      // Fetch category details
+      if (categoryId) {
+        const { data: categoryData } = await supabase
+          .from("categories")
+          .select("name")
+          .eq("id", categoryId)
+          .single();
+        
+        if (categoryData) {
+          setCategoryName(categoryData.name);
+        }
+      }
+
+      // Fetch products by category_id
       let query = supabase
         .from("products")
         .select("*")
         .eq("is_available", true);
 
       if (categoryId && categoryId !== "all") {
-        query = query.eq("category", categoryId);
+        query = query.eq("category_id", categoryId);
       }
 
       // Apply sorting
@@ -77,8 +92,7 @@ const Category = () => {
     setTimeout(() => setAnimatingProductId(null), 600);
   };
 
-  const categoryName = categoryId === "all" ? "All Products" : 
-    categoryId?.split("-").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+  const displayName = categoryId === "all" ? "All Products" : categoryName || "Category";
 
   if (loading) {
     return (
@@ -102,7 +116,7 @@ const Category = () => {
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <h1 className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-              {categoryName}
+              {displayName}
             </h1>
           </div>
           

@@ -44,7 +44,8 @@ const colorMap: any = {
 const Home = () => {
   const { itemCount } = useCart();
   const [products, setProducts] = useState<any[]>([]);
-  const [categories, setCategories] = useState<any[]>([]);
+  const [topCategories, setTopCategories] = useState<any[]>([]);
+  const [subCategories, setSubCategories] = useState<Record<string, any[]>>({});
 
   useEffect(() => {
     fetchCategories();
@@ -52,13 +53,29 @@ const Home = () => {
   }, []);
 
   const fetchCategories = async () => {
-    const { data } = await (supabase as any)
+    // Fetch all categories
+    const { data } = await supabase
       .from("categories")
       .select("*")
-      .is("parent_id", null)
-      .order("name");
+      .order("sort_order", { ascending: true });
     
-    setCategories(data || []);
+    if (data) {
+      // Separate top-level and subcategories
+      const topLevel = data.filter((cat: any) => cat.parent_id === null);
+      const subCats: Record<string, any[]> = {};
+      
+      data.forEach((cat: any) => {
+        if (cat.parent_id) {
+          if (!subCats[cat.parent_id]) {
+            subCats[cat.parent_id] = [];
+          }
+          subCats[cat.parent_id].push(cat);
+        }
+      });
+      
+      setTopCategories(topLevel);
+      setSubCategories(subCats);
+    }
   };
 
   const fetchProducts = async () => {
@@ -108,34 +125,69 @@ const Home = () => {
         </div>
       </div>
 
-      {/* Categories */}
-      <div className="p-4">
+      {/* Categories - Blinkit Style */}
+      <div className="p-4 space-y-8">
         <div className="flex items-center gap-2 mb-6">
           <div className="w-1 h-6 bg-primary rounded-full"></div>
           <h2 className="text-2xl font-bold">Shop by Category</h2>
         </div>
-        <div className="grid grid-cols-4 gap-3">
-          {categories.map((category, index) => {
-            const Icon = iconMap[category.name] || ShoppingBag;
-            const color = colorMap[category.name] || "text-primary";
-            
-            return (
-              <Link key={category.id} to={`/category/${category.name}`}>
-                <Card 
-                  className="h-24 flex flex-col items-center justify-center gap-2 border-none shadow-soft hover:shadow-medium transition-all hover:-translate-y-1 cursor-pointer group bg-card/50 backdrop-blur-sm animate-fade-in"
-                  style={{ animationDelay: `${index * 50}ms` }}
-                >
-                  <div className={`${color} group-hover:scale-110 transition-transform`}>
-                    <Icon className="h-8 w-8" strokeWidth={1.5} />
+        
+        {topCategories.map((topCategory, topIndex) => {
+          const Icon = iconMap[topCategory.name] || ShoppingBag;
+          const subs = subCategories[topCategory.id] || [];
+          
+          return (
+            <div key={topCategory.id} className="animate-fade-in" style={{ animationDelay: `${topIndex * 100}ms` }}>
+              {/* Top Category Header */}
+              <Link to={`/category/${topCategory.id}`}>
+                <div className="flex items-center gap-3 mb-4 p-3 rounded-xl bg-gradient-subtle hover:bg-primary/5 transition-all group cursor-pointer">
+                  <div className="bg-primary/10 p-3 rounded-full group-hover:bg-primary/20 transition-all group-hover:scale-110">
+                    <Icon className="h-6 w-6 text-primary" strokeWidth={1.5} />
                   </div>
-                  <span className="text-xs text-center font-semibold line-clamp-1 group-hover:text-primary transition-colors">
-                    {category.name}
-                  </span>
-                </Card>
+                  <h3 className="text-lg font-bold group-hover:text-primary transition-colors">{topCategory.name}</h3>
+                </div>
               </Link>
-            );
-          })}
-        </div>
+              
+              {/* Subcategories Grid */}
+              {subs.length > 0 && (
+                <div className="grid grid-cols-4 gap-3 mb-2">
+                  {subs.slice(0, 8).map((subCat: any, subIndex: number) => (
+                    <Link key={subCat.id} to={`/category/${subCat.id}`}>
+                      <Card 
+                        className="h-28 flex flex-col items-center justify-center gap-2 border-none shadow-soft hover:shadow-medium transition-all hover:-translate-y-1 cursor-pointer group bg-card/50 backdrop-blur-sm"
+                        style={{ animationDelay: `${(topIndex * 100) + (subIndex * 30)}ms` }}
+                      >
+                        {subCat.image_url ? (
+                          <img 
+                            src={subCat.image_url} 
+                            alt={subCat.name}
+                            className="h-12 w-12 object-contain group-hover:scale-110 transition-transform"
+                          />
+                        ) : (
+                          <div className="bg-primary/10 p-2 rounded-full group-hover:bg-primary/20 transition-all">
+                            <ShoppingBag className="h-6 w-6 text-primary" strokeWidth={1.5} />
+                          </div>
+                        )}
+                        <span className="text-xs text-center font-semibold line-clamp-2 px-2 group-hover:text-primary transition-colors">
+                          {subCat.name}
+                        </span>
+                      </Card>
+                    </Link>
+                  ))}
+                </div>
+              )}
+              
+              {/* View All Link */}
+              {subs.length > 8 && (
+                <Link to={`/category/${topCategory.id}`}>
+                  <Button variant="ghost" className="w-full text-primary hover:bg-primary/10 mt-2">
+                    View All {topCategory.name} →
+                  </Button>
+                </Link>
+              )}
+            </div>
+          );
+        })}
       </div>
 
       {/* Banner */}
