@@ -22,6 +22,7 @@ import {
 import { useCart } from "@/contexts/CartContext";
 import { supabase } from "@/integrations/supabase/client";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import InlineCartControl from "@/components/InlineCartControl";
 
 const iconMap: any = {
   "Vegetables": Carrot,
@@ -220,40 +221,39 @@ const Home = () => {
         </div>
         <div className="grid grid-cols-2 gap-4">
           {products.map((product, index) => (
-            <Link key={product.id} to={`/product/${product.id}`}>
-              <Card 
-                className="group overflow-hidden border-none shadow-soft hover:shadow-strong transition-all hover:-translate-y-2 animate-fade-in bg-card/50 backdrop-blur-sm"
-                style={{ animationDelay: `${index * 50}ms` }}
-              >
-                <div className="relative aspect-square bg-gradient-subtle flex items-center justify-center text-4xl overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-primary opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
-                  {product.image_url ? (
-                    <img 
-                      src={product.image_url} 
-                      alt={product.name}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                    />
-                  ) : (
-                    <span className="group-hover:scale-110 transition-transform duration-300">🛒</span>
-                  )}
-                </div>
-                <div className="p-3">
-                  <h3 className="font-semibold text-sm line-clamp-2 min-h-[2.5rem] mb-1 group-hover:text-primary transition-colors">
-                    {product.name}
-                  </h3>
-                  <p className="text-xs text-muted-foreground mb-3">{product.unit}</p>
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-lg text-primary">₹{product.price}</span>
-                    <Button 
-                      size="sm" 
-                      className="h-8 px-4 gradient-primary hover:opacity-90 shadow-md hover:shadow-lg transition-all hover:scale-105 text-xs"
-                    >
-                      Add
-                    </Button>
+            <div key={product.id} className="relative">
+              <Link to={`/product/${product.id}`}>
+                <Card 
+                  className="group overflow-hidden border-none shadow-soft hover:shadow-strong transition-all hover:-translate-y-2 animate-fade-in bg-card/50 backdrop-blur-sm"
+                  style={{ animationDelay: `${index * 50}ms` }}
+                >
+                  <div className="relative aspect-square bg-gradient-subtle flex items-center justify-center text-4xl overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-primary opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
+                    {product.image_url ? (
+                      <img 
+                        src={product.image_url} 
+                        alt={product.name}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                      />
+                    ) : (
+                      <span className="group-hover:scale-110 transition-transform duration-300">🛒</span>
+                    )}
                   </div>
-                </div>
-              </Card>
-            </Link>
+                  <div className="p-3">
+                    <h3 className="font-semibold text-sm line-clamp-2 min-h-[2.5rem] mb-1 group-hover:text-primary transition-colors">
+                      {product.name}
+                    </h3>
+                    <p className="text-xs text-muted-foreground mb-3">{product.unit}</p>
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-lg text-primary">₹{product.price}</span>
+                      <div onClick={(e) => e.preventDefault()}>
+                        <InlineCartControl product={product} />
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              </Link>
+            </div>
           ))}
         </div>
       </div>

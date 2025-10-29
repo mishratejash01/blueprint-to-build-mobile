@@ -188,6 +188,9 @@
       transform: scale(0.8);
       opacity: 0;
     }
+    50% {
+      transform: scale(1.05);
+    }
     100% { 
       transform: scale(1);
       opacity: 1;
@@ -203,6 +206,26 @@
       transform: translateY(0);
       opacity: 1;
     }
+  }
+  
+  @keyframes shimmer {
+    0% {
+      background-position: -1000px 0;
+    }
+    100% {
+      background-position: 1000px 0;
+    }
+  }
+  
+  .shimmer {
+    animation: shimmer 2s infinite;
+    background: linear-gradient(
+      to right,
+      transparent 0%,
+      rgba(255, 255, 255, 0.3) 50%,
+      transparent 100%
+    );
+    background-size: 1000px 100%;
   }
   
   .gradient-primary {

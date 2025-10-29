@@ -4,9 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ArrowLeft, SlidersHorizontal } from "lucide-react";
-import { useCart } from "@/contexts/CartContext";
-import { toast } from "sonner";
-import AddToCartAnimation from "@/components/AddToCartAnimation";
+import InlineCartControl from "@/components/InlineCartControl";
 
 interface Product {
   id: string;
@@ -21,11 +19,9 @@ interface Product {
 const Category = () => {
   const { categoryId } = useParams();
   const navigate = useNavigate();
-  const { addItem } = useCart();
   const [products, setProducts] = useState<Product[]>([]);
   const [categoryName, setCategoryName] = useState<string>("");
   const [loading, setLoading] = useState(true);
-  const [animatingProductId, setAnimatingProductId] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<"name" | "price-low" | "price-high">("name");
 
   useEffect(() => {
@@ -72,24 +68,9 @@ const Category = () => {
       setProducts(data || []);
     } catch (error) {
       console.error("Error fetching products:", error);
-      toast.error("Failed to load products");
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleAddToCart = (product: Product) => {
-    setAnimatingProductId(product.id);
-    addItem({
-      id: product.id,
-      name: product.name,
-      price: product.price,
-      quantity: 1,
-      unit: product.unit,
-      image: product.image_url || "/placeholder.svg",
-    });
-    toast.success(`${product.name} added to cart!`);
-    setTimeout(() => setAnimatingProductId(null), 600);
   };
 
   const displayName = categoryId === "all" ? "All Products" : categoryName || "Category";
@@ -159,42 +140,36 @@ const Category = () => {
         ) : (
           <div className="grid grid-cols-2 gap-4">
             {products.map((product, index) => (
-              <Card 
-                key={product.id} 
-                className="group cursor-pointer border-none shadow-soft hover:shadow-strong transition-all duration-300 hover:-translate-y-1 overflow-hidden animate-fade-in"
-                style={{ animationDelay: `${index * 50}ms` }}
-                onClick={() => navigate(`/product/${product.id}`)}
-              >
-                <CardContent className="p-0">
-                  <div className="relative overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-primary opacity-0 group-hover:opacity-10 transition-opacity duration-300 z-10"></div>
-                    <img
-                      src={product.image_url || "/placeholder.svg"}
-                      alt={product.name}
-                      className="w-full h-32 object-cover group-hover:scale-110 transition-transform duration-500"
-                    />
-                  </div>
-                  <div className="p-3">
-                    <h3 className="font-semibold text-sm line-clamp-2 min-h-[2.5rem] group-hover:text-primary transition-colors">
-                      {product.name}
-                    </h3>
-                    <p className="text-muted-foreground text-xs mb-3">{product.unit}</p>
-                    <div className="flex items-center justify-between">
-                      <span className="font-bold text-lg text-primary">₹{product.price}</span>
-                      <Button
-                        size="sm"
-                        className="h-9 px-4 gradient-primary hover:opacity-90 shadow-md hover:shadow-lg transition-all hover:scale-105"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleAddToCart(product);
-                        }}
-                      >
-                        Add
-                      </Button>
+              <div key={product.id} className="relative">
+                <Card 
+                  className="group cursor-pointer border-none shadow-soft hover:shadow-strong transition-all duration-300 hover:-translate-y-1 overflow-hidden animate-fade-in"
+                  style={{ animationDelay: `${index * 50}ms` }}
+                  onClick={() => navigate(`/product/${product.id}`)}
+                >
+                  <CardContent className="p-0">
+                    <div className="relative overflow-hidden">
+                      <div className="absolute inset-0 bg-gradient-primary opacity-0 group-hover:opacity-10 transition-opacity duration-300 z-10"></div>
+                      <img
+                        src={product.image_url || "/placeholder.svg"}
+                        alt={product.name}
+                        className="w-full h-32 object-cover group-hover:scale-110 transition-transform duration-500"
+                      />
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
+                    <div className="p-3">
+                      <h3 className="font-semibold text-sm line-clamp-2 min-h-[2.5rem] group-hover:text-primary transition-colors">
+                        {product.name}
+                      </h3>
+                      <p className="text-muted-foreground text-xs mb-3">{product.unit}</p>
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-lg text-primary">₹{product.price}</span>
+                        <div onClick={(e) => e.preventDefault()}>
+                          <InlineCartControl product={product} />
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             ))}
           </div>
         )}
