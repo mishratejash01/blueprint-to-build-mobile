@@ -1,133 +1,42 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.76.1';
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+// ⬇️ THIS IS YOUR URL ⬇️
+const GOOGLE_SHEET_URL = "https://script.google.com/macros/s/AKfycbwn0KMmiZ9eusYsH4Bm-N1Z_I_jyJ_XuOxJsDDfqKT_Bb4fAvN67CxmoufJWZpiyL6VtQ/exec";
 
-Deno.serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
-
+serve(async (req) => {
   try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    // 1. Get the order data from the request
+    // This assumes Supabase is sending the data in the request body
+    const orderData = await req.json(); 
 
-    const { order_id, google_sheets_webhook_url } = await req.json();
+    // You can log it to check (optional)
+    console.log('Received order, sending to Google Sheets: ', orderData.order_id);
 
-    if (!order_id) {
-      throw new Error('order_id is required');
-    }
-
-    if (!google_sheets_webhook_url) {
-      throw new Error('google_sheets_webhook_url is required');
-    }
-
-    console.log(`Syncing order ${order_id} to Google Sheets`);
-
-    // Fetch complete order details with related data
-    const { data: order, error: orderError } = await supabase
-      .from('orders')
-      .select(`
-        id,
-        created_at,
-        status,
-        total,
-        subtotal,
-        delivery_fee,
-        delivery_address,
-        payment_status,
-        customer_id,
-        store_id,
-        delivery_partner_id,
-        delivery_latitude,
-        delivery_longitude
-      `)
-      .eq('id', order_id)
-      .single();
-
-    if (orderError) throw orderError;
-
-    // Fetch order items
-    const { data: orderItems, error: itemsError } = await supabase
-      .from('order_items')
-      .select('product_name, quantity, price')
-      .eq('order_id', order_id);
-
-    if (itemsError) throw itemsError;
-
-    // Fetch delivery partner details if assigned
-    let deliveryPartnerInfo = null;
-    if (order.delivery_partner_id) {
-      const { data: partner } = await supabase
-        .from('profiles')
-        .select('id, full_name, phone, email')
-        .eq('id', order.delivery_partner_id)
-        .single();
-      
-      deliveryPartnerInfo = partner;
-    }
-
-    // Format order data for Google Sheets
-    const orderData = {
-      order_id: order.id,
-      created_at: order.created_at,
-      status: order.status,
-      total: order.total,
-      subtotal: order.subtotal,
-      delivery_fee: order.delivery_fee,
-      delivery_address: order.delivery_address,
-      payment_status: order.payment_status,
-      customer_id: order.customer_id,
-      store_id: order.store_id,
-      delivery_partner_id: order.delivery_partner_id || 'Not Assigned',
-      delivery_partner_name: deliveryPartnerInfo?.full_name || 'Not Assigned',
-      delivery_partner_phone: deliveryPartnerInfo?.phone || '',
-      order_accepted: order.delivery_partner_id ? 'YES' : 'NO',
-      items_count: orderItems?.length || 0,
-      items_summary: orderItems?.map(item => `${item.product_name} (${item.quantity})`).join(', ') || ''
-    };
-
-    console.log('Sending order data to Google Sheets:', orderData);
-
-    // Send to Google Sheets webhook
-    const response = await fetch(google_sheets_webhook_url, {
+    // 2. Send the data to your Google Sheet URL
+    const response = await fetch(GOOGLE_SHEET_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(orderData),
+      body: JSON.stringify(orderData) // Send the order data
     });
 
-    if (!response.ok) {
-      throw new Error(`Google Sheets webhook failed: ${response.statusText}`);
-    }
+    const responseText = await response.text();
+    
+    // This log will show you the response from your Apps Script
+    console.log('Google Sheets Sync Response: ' + responseText);
 
-    console.log('Order synced successfully to Google Sheets');
-
+    // 3. Return a success message to whatever called the function
     return new Response(
-      JSON.stringify({
-        success: true,
-        message: 'Order synced to Google Sheets',
-        order_id: order_id
-      }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ message: "Order synced to Google Sheets" }),
+      { headers: { "Content-Type": "application/json" }, status: 200 },
     );
 
   } catch (error) {
-    console.error('Edge function error:', error);
+    console.error('Error in function: ' + error.message);
     return new Response(
-      JSON.stringify({
-        success: false,
-        error: error instanceof Error ? error.message : String(error)
-      }),
-      {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      }
+      JSON.stringify({ error: error.message }),
+      { headers: { "Content-Type": "application/json" }, status: 500 },
     );
   }
 });
