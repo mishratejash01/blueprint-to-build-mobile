@@ -96,6 +96,17 @@ const Checkout = () => {
 
       if (itemsError) throw itemsError;
 
+      // Sync order to Google Sheets (fire and forget - don't block user flow)
+      supabase.functions.invoke('sync-orders-to-sheet', {
+        body: {
+          order_id: order.id,
+          google_sheets_webhook_url: 'https://script.google.com/macros/s/AKfycbwn0KMmiZ9eusYsH4Bm-N1Z_I_jyJ_XuOxJsDDfqKT_Bb4fAvN67CxmoufJWZpiyL6VtQ/exec'
+        }
+      }).catch(err => {
+        console.error('Failed to sync order to Google Sheets:', err);
+        // Don't throw - we don't want to block the order flow
+      });
+
       clearCart();
       navigate(`/order-confirmation/${order.id}`);
 
