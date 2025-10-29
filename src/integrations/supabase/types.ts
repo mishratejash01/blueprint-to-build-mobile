@@ -325,9 +325,9 @@ export type Database = {
       accept_order: {
         Args: { order_id_to_accept: string }
         Returns: {
-          delivery_partner_id: string
-          id: string
-          status: Database["public"]["Enums"]["order_status"]
+          order_id: string
+          order_status: Database["public"]["Enums"]["order_status"]
+          partner_id: string
         }[]
       }
     }
