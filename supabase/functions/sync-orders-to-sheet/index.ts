@@ -3,7 +3,17 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.76.1";
 
 const GOOGLE_SHEET_URL = "https://script.google.com/macros/s/AKfycbwn0KMmiZ9eusYsH4Bm-N1Z_I_jyJ_XuOxJsDDfqKT_Bb4fAvN67CxmoufJWZpiyL6VtQ/exec";
 
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
 serve(async (req) => {
+  // Handle CORS preflight requests
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
   try {
     const { order_id } = await req.json();
     console.log('Syncing order to Google Sheets:', order_id);
@@ -96,7 +106,7 @@ serve(async (req) => {
         order_id,
         status: order.status 
       }),
-      { headers: { "Content-Type": "application/json" }, status: 200 }
+      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
     );
 
   } catch (error) {
@@ -104,7 +114,7 @@ serve(async (req) => {
     console.error('Error in function: ' + errorMessage);
     return new Response(
       JSON.stringify({ error: errorMessage }),
-      { headers: { "Content-Type": "application/json" }, status: 500 },
+      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 },
     );
   }
 });
