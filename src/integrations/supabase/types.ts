@@ -235,8 +235,10 @@ export type Database = {
           email: string | null
           full_name: string | null
           id: string
+          partner_data: Json | null
           phone: string | null
           role: Database["public"]["Enums"]["user_role"]
+          store_id: string | null
           updated_at: string
         }
         Insert: {
@@ -244,8 +246,10 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id: string
+          partner_data?: Json | null
           phone?: string | null
           role?: Database["public"]["Enums"]["user_role"]
+          store_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -253,11 +257,21 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id?: string
+          partner_data?: Json | null
           phone?: string | null
           role?: Database["public"]["Enums"]["user_role"]
+          store_id?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       stores: {
         Row: {
@@ -325,7 +339,7 @@ export type Database = {
         | "in_transit"
         | "delivered"
         | "cancelled"
-      user_role: "customer" | "store_manager" | "delivery_partner"
+      user_role: "customer" | "store_manager" | "partner"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -461,7 +475,7 @@ export const Constants = {
         "delivered",
         "cancelled",
       ],
-      user_role: ["customer", "store_manager", "delivery_partner"],
+      user_role: ["customer", "store_manager", "partner"],
     },
   },
 } as const
