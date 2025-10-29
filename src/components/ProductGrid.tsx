@@ -11,11 +11,18 @@ interface Product {
 }
 
 interface ProductGridProps {
-  products: Product[];
+  products?: Product[];
   title?: string;
 }
 
-const ProductGrid = ({ products, title = "Best Sellers" }: ProductGridProps) => {
+const ProductGrid = ({ products = [], title = "Best Sellers" }: ProductGridProps) => {
+  // Safety check - ensure we have a valid array
+  const validProducts = Array.isArray(products) ? products.filter(p => p?.id) : [];
+  
+  if (validProducts.length === 0) {
+    return null;
+  }
+  
   return (
     <div className="space-y-4 px-4">
       {title && (
@@ -25,7 +32,7 @@ const ProductGrid = ({ products, title = "Best Sellers" }: ProductGridProps) => 
       )}
       
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        {products.filter(p => p?.id).map((product, index) => (
+        {validProducts.map((product, index) => (
           <div 
             key={product.id} 
             className="animate-fade-in"

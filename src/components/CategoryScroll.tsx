@@ -10,11 +10,18 @@ interface Category {
 }
 
 interface CategoryScrollProps {
-  categories: Category[];
+  categories?: Category[];
   title?: string;
 }
 
-const CategoryScroll = ({ categories, title = "Shop by Category" }: CategoryScrollProps) => {
+const CategoryScroll = ({ categories = [], title = "Shop by Category" }: CategoryScrollProps) => {
+  // Safety check - ensure we have a valid array
+  const validCategories = Array.isArray(categories) ? categories.filter(cat => cat?.id) : [];
+  
+  if (validCategories.length === 0) {
+    return null;
+  }
+  
   return (
     <div className="space-y-4">
       {title && (
@@ -25,7 +32,7 @@ const CategoryScroll = ({ categories, title = "Shop by Category" }: CategoryScro
       
       <ScrollArea className="w-full whitespace-nowrap">
         <div className="flex gap-3 px-4 pb-2">
-          {categories.filter(cat => cat?.id).map((category, index) => (
+          {validCategories.map((category, index) => (
             <Link 
               key={category.id} 
               to={`/category/${category.id}`}
