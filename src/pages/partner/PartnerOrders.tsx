@@ -141,12 +141,6 @@ const PartnerOrders = () => {
         fetchOrders();
       } else {
         console.log("Order accepted successfully:", data);
-        
-        // Sync updated order status to Google Sheets
-        supabase.functions.invoke('sync-orders-to-sheet', {
-          body: { order_id: orderId }
-        }).catch(err => console.error('Failed to sync to sheets:', err));
-        
         toast({
           title: "Order accepted!",
           description: "Starting delivery"
