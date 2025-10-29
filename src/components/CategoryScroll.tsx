@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { ShoppingBag } from "lucide-react";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { getCategoryImage } from "@/lib/categoryImages";
 
 interface Category {
   id: string;
@@ -32,7 +33,10 @@ const CategoryScroll = ({ categories = [], title = "Shop by Category" }: Categor
       
       <ScrollArea className="w-full whitespace-nowrap">
         <div className="flex gap-3 px-4 pb-2">
-          {validCategories.map((category, index) => (
+          {validCategories.map((category, index) => {
+            const categoryImg = getCategoryImage(category.name) || category.image_url;
+            
+            return (
             <Link 
               key={category.id} 
               to={`/category/${category.id}`}
@@ -40,10 +44,10 @@ const CategoryScroll = ({ categories = [], title = "Shop by Category" }: Categor
               style={{ animationDelay: `${index * 50}ms` }}
             >
               <Card className="category-card w-[140px] h-[160px] flex flex-col items-center justify-center gap-3 border border-border bg-white overflow-hidden p-4 cursor-pointer">
-                {category.image_url ? (
+                {categoryImg ? (
                   <div className="w-full h-[100px] flex items-center justify-center">
                     <img 
-                      src={category.image_url} 
+                      src={categoryImg} 
                       alt={category.name}
                       className="max-w-full max-h-full object-contain"
                     />
@@ -58,7 +62,7 @@ const CategoryScroll = ({ categories = [], title = "Shop by Category" }: Categor
                 </span>
               </Card>
             </Link>
-          ))}
+          )})}
         </div>
         <ScrollBar orientation="horizontal" className="invisible" />
       </ScrollArea>
