@@ -47,53 +47,113 @@ const PartnerOrders = () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    // Get available orders
-    const { data: available, error: availableError } = await (supabase as any)
+    console.log("Fetching orders for user:", user.id);
+
+    // Get available orders - remove the stores join temporarily
+    const { data: available, error: availableError } = await supabase
       .from("orders")
-      .select("*, stores(*)")
+      .select("*")
       .eq("status", "ready_for_pickup")
       .is("delivery_partner_id", null)
       .order("created_at", { ascending: false });
 
     console.log("Available orders query result:", { available, availableError });
-    setAvailableOrders(available || []);
+    
+    // If we got orders, fetch store details separately
+    if (available && available.length > 0) {
+      const storeIds = [...new Set(available.map(o => o.store_id))];
+      const { data: stores } = await supabase
+        .from("stores")
+        .select("*")
+        .in("id", storeIds);
+      
+      console.log("Stores data:", stores);
+      
+      // Merge store data into orders
+      const ordersWithStores = available.map(order => ({
+        ...order,
+        stores: stores?.find(s => s.id === order.store_id)
+      }));
+      
+      setAvailableOrders(ordersWithStores);
+    } else {
+      setAvailableOrders([]);
+    }
 
     // Get active order
-    const { data: active, error: activeError } = await (supabase as any)
+    const { data: active, error: activeError } = await supabase
       .from("orders")
-      .select("*, stores(*), order_items(*)")
+      .select("*")
       .eq("delivery_partner_id", user.id)
       .eq("status", "in_transit")
-      .single();
+      .maybeSingle();
 
     console.log("Active order query result:", { active, activeError });
-    setActiveOrder(active);
+    
+    if (active) {
+      // Fetch store and order items separately
+      const { data: store } = await supabase
+        .from("stores")
+        .select("*")
+        .eq("id", active.store_id)
+        .single();
+      
+      const { data: items } = await supabase
+        .from("order_items")
+        .select("*")
+        .eq("order_id", active.id);
+      
+      setActiveOrder({
+        ...active,
+        stores: store,
+        order_items: items || []
+      });
+    } else {
+      setActiveOrder(null);
+    }
   };
 
   const handleAcceptOrder = async (orderId: string) => {
     console.log("Attempting to accept order:", orderId);
+    console.log("Order ID type:", typeof orderId);
     
-    const { data, error } = await supabase.rpc('accept_order', {
-      order_id_to_accept: orderId
-    });
+    try {
+      const { data, error } = await supabase.rpc('accept_order', {
+        order_id_to_accept: orderId
+      });
 
-    console.log("Accept order result:", { data, error });
+      console.log("Accept order response:", { data, error });
 
-    if (error) {
-      console.error("Accept order error details:", error);
+      if (error) {
+        console.error("Accept order error details:", {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        });
+        
+        toast({
+          title: "Order unavailable",
+          description: error.message || "Sorry, this order was just taken by another partner",
+          variant: "destructive"
+        });
+        // Refresh the orders list
+        fetchOrders();
+      } else {
+        console.log("Order accepted successfully:", data);
+        toast({
+          title: "Order accepted!",
+          description: "Starting delivery"
+        });
+        navigate(`/partner/delivery/${orderId}`);
+      }
+    } catch (err) {
+      console.error("Caught exception:", err);
       toast({
-        title: "Order unavailable",
-        description: error.message || "Sorry, this order was just taken by another partner",
+        title: "Error",
+        description: "Failed to accept order",
         variant: "destructive"
       });
-      // Refresh the orders list
-      fetchOrders();
-    } else {
-      toast({
-        title: "Order accepted!",
-        description: "Starting delivery"
-      });
-      navigate(`/partner/delivery/${orderId}`);
     }
   };
 
