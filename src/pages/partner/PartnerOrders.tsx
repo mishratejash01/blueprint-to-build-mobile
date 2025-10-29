@@ -71,14 +71,19 @@ const PartnerOrders = () => {
   };
 
   const handleAcceptOrder = async (orderId: string) => {
+    console.log("Attempting to accept order:", orderId);
+    
     const { data, error } = await supabase.rpc('accept_order', {
       order_id_to_accept: orderId
     });
 
+    console.log("Accept order result:", { data, error });
+
     if (error) {
+      console.error("Accept order error details:", error);
       toast({
         title: "Order unavailable",
-        description: "Sorry, this order was just taken by another partner",
+        description: error.message || "Sorry, this order was just taken by another partner",
         variant: "destructive"
       });
       // Refresh the orders list
