@@ -72,3 +72,31 @@ export const showNotification = (title: string, body: string, icon?: string) => 
     });
   }
 };
+
+// Get human-friendly order status message
+export const getOrderStatusMessage = (status: string): string => {
+  const messages: Record<string, string> = {
+    pending: "Your store is packing your items!",
+    confirmed: "Your order is confirmed and being prepared",
+    ready: "Your order is ready for pickup",
+    picked_up: "Your order is on the way!",
+    in_transit: "Your delivery partner is heading your way!",
+    delivered: "Delivered! Hope you enjoy your items!",
+    cancelled: "This order was cancelled",
+  };
+  return messages[status] || status;
+};
+
+// Get emoji for order status
+export const getStatusEmoji = (status: string): string => {
+  const emojis: Record<string, string> = {
+    pending: "📦",
+    confirmed: "✅",
+    ready: "🎯",
+    picked_up: "🚚",
+    in_transit: "🏃",
+    delivered: "🎉",
+    cancelled: "❌",
+  };
+  return emojis[status] || "📋";
+};
