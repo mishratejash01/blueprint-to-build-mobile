@@ -142,13 +142,17 @@ export type Database = {
         Row: {
           created_at: string
           customer_id: string | null
+          customer_name: string | null
+          customer_phone: string | null
           delivery_address: string
           delivery_fee: number | null
           delivery_latitude: number | null
           delivery_longitude: number | null
           delivery_partner_id: string | null
+          discount_amount: number | null
           id: string
           payment_id: string | null
+          payment_method: string | null
           payment_status: string | null
           status: Database["public"]["Enums"]["order_status"]
           store_id: string | null
@@ -159,13 +163,17 @@ export type Database = {
         Insert: {
           created_at?: string
           customer_id?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
           delivery_address: string
           delivery_fee?: number | null
           delivery_latitude?: number | null
           delivery_longitude?: number | null
           delivery_partner_id?: string | null
+          discount_amount?: number | null
           id?: string
           payment_id?: string | null
+          payment_method?: string | null
           payment_status?: string | null
           status?: Database["public"]["Enums"]["order_status"]
           store_id?: string | null
@@ -176,13 +184,17 @@ export type Database = {
         Update: {
           created_at?: string
           customer_id?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
           delivery_address?: string
           delivery_fee?: number | null
           delivery_latitude?: number | null
           delivery_longitude?: number | null
           delivery_partner_id?: string | null
+          discount_amount?: number | null
           id?: string
           payment_id?: string | null
+          payment_method?: string | null
           payment_status?: string | null
           status?: Database["public"]["Enums"]["order_status"]
           store_id?: string | null
@@ -320,6 +332,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      saved_addresses: {
+        Row: {
+          address: string
+          created_at: string
+          id: string
+          is_default: boolean | null
+          name: string
+          phone: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          address: string
+          created_at?: string
+          id?: string
+          is_default?: boolean | null
+          name: string
+          phone: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          address?: string
+          created_at?: string
+          id?: string
+          is_default?: boolean | null
+          name?: string
+          phone?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       stores: {
         Row: {

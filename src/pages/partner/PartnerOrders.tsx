@@ -49,7 +49,7 @@ const PartnerOrders = () => {
 
     console.log("Fetching orders for user:", user.id);
 
-    // Get available orders - remove the stores join temporarily
+    // Get available orders
     const { data: available, error: availableError } = await supabase
       .from("orders")
       .select("*")
@@ -59,7 +59,6 @@ const PartnerOrders = () => {
 
     console.log("Available orders query result:", { available, availableError });
     
-    // If we got orders, fetch store details separately
     if (available && available.length > 0) {
       const storeIds = [...new Set(available.map(o => o.store_id))];
       const { data: stores } = await supabase
@@ -69,7 +68,6 @@ const PartnerOrders = () => {
       
       console.log("Stores data:", stores);
       
-      // Merge store data into orders
       const ordersWithStores = available.map(order => ({
         ...order,
         stores: stores?.find(s => s.id === order.store_id)
@@ -91,7 +89,6 @@ const PartnerOrders = () => {
     console.log("Active order query result:", { active, activeError });
     
     if (active) {
-      // Fetch store and order items separately
       const { data: store } = await supabase
         .from("stores")
         .select("*")

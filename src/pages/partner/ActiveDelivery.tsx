@@ -74,6 +74,25 @@ const ActiveDelivery = () => {
         </div>
 
         <div className="p-4 space-y-4">
+          <Card className="p-4 bg-accent/5">
+            <h3 className="font-semibold mb-3">Customer Details</h3>
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <span className="text-sm text-muted-foreground">Name:</span>
+                <span className="text-sm font-semibold">{order.customer_name || "N/A"}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm text-muted-foreground">Phone:</span>
+                <a 
+                  href={`tel:${order.customer_phone}`}
+                  className="text-sm font-semibold text-primary hover:underline"
+                >
+                  {order.customer_phone || "N/A"}
+                </a>
+              </div>
+            </div>
+          </Card>
+
           <Card className="p-4">
             <div className="flex items-start gap-3 mb-4">
               <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
