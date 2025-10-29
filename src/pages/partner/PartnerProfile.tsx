@@ -28,7 +28,7 @@ const PartnerProfile = () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        navigate("/partner/login");
+        navigate("/auth?type=partner");
         return;
       }
 
@@ -90,7 +90,7 @@ const PartnerProfile = () => {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    navigate("/partner/login");
+    navigate("/auth?type=partner");
   };
 
   if (loading) {
