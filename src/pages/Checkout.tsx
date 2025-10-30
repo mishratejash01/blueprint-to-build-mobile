@@ -126,15 +126,17 @@ const Checkout = () => {
         });
       }
 
-      // Get the first active store for MVP
+      // Get Fresh Mart store (the main store with products and manager assigned)
       const { data: stores } = await supabase
         .from("stores")
-        .select("id")
+        .select("id, name")
         .eq("is_active", true)
+        .not("manager_id", "is", null)
+        .order("created_at", { ascending: true })
         .limit(1);
 
       if (!stores || stores.length === 0) {
-        throw new Error("No active stores available");
+        throw new Error("No active stores available. Please try again later.");
       }
 
       const deliveryFee = 20;

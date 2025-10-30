@@ -212,7 +212,7 @@ const StoreOrders = () => {
   });
 
   return (
-    <ProtectedRoute>
+    <ProtectedRoute allowedRoles={["store_manager"]}>
       <div className="min-h-screen bg-background">
         <div className="sticky top-0 bg-background border-b z-10 p-4">
           <div className="flex items-center gap-4 mb-4">

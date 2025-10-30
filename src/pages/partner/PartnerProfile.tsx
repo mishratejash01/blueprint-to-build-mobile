@@ -95,7 +95,7 @@ const PartnerProfile = () => {
 
   if (loading) {
     return (
-      <ProtectedRoute>
+      <ProtectedRoute allowedRoles={["partner"]}>
         <div className="min-h-screen flex items-center justify-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
         </div>
@@ -104,7 +104,7 @@ const PartnerProfile = () => {
   }
 
   return (
-    <ProtectedRoute>
+    <ProtectedRoute allowedRoles={["partner"]}>
       <div className="min-h-screen bg-background pb-20">
         <div className="sticky top-0 z-10 bg-card border-b p-4">
           <div className="flex items-center gap-4">

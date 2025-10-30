@@ -27,16 +27,23 @@ const Auth = () => {
   const [searchParams] = useSearchParams();
   const userType = searchParams.get("type") || "customer";
 
-  // --- useEffect remains the same ---
+  // Redirect based on actual user role from database
   useEffect(() => {
     // Set up auth state listener first
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       setSession(session);
       if (session) {
-        // Redirect based on user type
-        if (userType === "store") {
+        // Fetch actual user role from database
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("role")
+          .eq("id", session.user.id)
+          .single();
+
+        // Redirect based on actual role, not URL parameter
+        if (profile?.role === "store_manager") {
           navigate("/store/dashboard");
-        } else if (userType === "partner") {
+        } else if (profile?.role === "partner") {
           navigate("/partner/dashboard");
         } else {
           navigate("/home");
@@ -45,12 +52,20 @@ const Auth = () => {
     });
 
     // Then check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       setSession(session);
       if (session) {
-        if (userType === "store") {
+        // Fetch actual user role from database
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("role")
+          .eq("id", session.user.id)
+          .single();
+
+        // Redirect based on actual role, not URL parameter
+        if (profile?.role === "store_manager") {
           navigate("/store/dashboard");
-        } else if (userType === "partner") {
+        } else if (profile?.role === "partner") {
           navigate("/partner/dashboard");
         } else {
           navigate("/home");
@@ -59,7 +74,7 @@ const Auth = () => {
     });
 
     return () => subscription.unsubscribe();
-  }, [navigate, userType]);
+  }, [navigate]);
 
 
   // --- handleSignUp remains the same ---

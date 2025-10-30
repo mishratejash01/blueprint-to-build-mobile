@@ -62,7 +62,7 @@ const ActiveDelivery = () => {
   }
 
   return (
-    <ProtectedRoute>
+    <ProtectedRoute allowedRoles={["partner"]}>
       <div className="min-h-screen bg-background pb-24">
         <div className="bg-primary text-white p-6">
           <div className="flex items-center gap-2 mb-2">

@@ -230,7 +230,7 @@ const StoreDashboard = () => {
   }
 
   return (
-    <ProtectedRoute>
+    <ProtectedRoute allowedRoles={["store_manager"]}>
       <div className="min-h-screen bg-background">
         <div className="border-b bg-card sticky top-0 z-10 shadow-sm">
           <div className="container mx-auto px-4 py-4">
