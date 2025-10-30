@@ -28,6 +28,7 @@ import PartnerOrders from "./pages/partner/PartnerOrders";
 import PartnerEarnings from "./pages/partner/PartnerEarnings";
 import PartnerProfile from "./pages/partner/PartnerProfile";
 import ActiveDelivery from "./pages/partner/ActiveDelivery";
+import PickupVerify from "./pages/partner/PickupVerify";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -61,6 +62,7 @@ const App = () => (
             <Route path="/store/analytics" element={<StoreAnalytics />} />
             <Route path="/partner/dashboard" element={<PartnerDashboard />} />
             <Route path="/partner/orders" element={<PartnerOrders />} />
+            <Route path="/partner/pickup-verify/:orderId" element={<PickupVerify />} />
             <Route path="/partner/earnings" element={<PartnerEarnings />} />
             <Route path="/partner/profile" element={<PartnerProfile />} />
             <Route path="/partner/delivery/:orderId" element={<ActiveDelivery />} />

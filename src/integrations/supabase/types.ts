@@ -154,6 +154,8 @@ export type Database = {
           payment_id: string | null
           payment_method: string | null
           payment_status: string | null
+          pickup_verified: boolean | null
+          pickup_verified_at: string | null
           status: Database["public"]["Enums"]["order_status"]
           store_id: string | null
           subtotal: number
@@ -175,6 +177,8 @@ export type Database = {
           payment_id?: string | null
           payment_method?: string | null
           payment_status?: string | null
+          pickup_verified?: boolean | null
+          pickup_verified_at?: string | null
           status?: Database["public"]["Enums"]["order_status"]
           store_id?: string | null
           subtotal: number
@@ -196,6 +200,8 @@ export type Database = {
           payment_id?: string | null
           payment_method?: string | null
           payment_status?: string | null
+          pickup_verified?: boolean | null
+          pickup_verified_at?: string | null
           status?: Database["public"]["Enums"]["order_status"]
           store_id?: string | null
           subtotal?: number
@@ -366,38 +372,133 @@ export type Database = {
         }
         Relationships: []
       }
+      store_pickup_otps: {
+        Row: {
+          attempts: number | null
+          expires_at: string
+          generated_at: string | null
+          id: string
+          is_verified: boolean | null
+          order_id: string
+          otp_code: string
+          store_id: string
+          verified_at: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          attempts?: number | null
+          expires_at: string
+          generated_at?: string | null
+          id?: string
+          is_verified?: boolean | null
+          order_id: string
+          otp_code: string
+          store_id: string
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          attempts?: number | null
+          expires_at?: string
+          generated_at?: string | null
+          id?: string
+          is_verified?: boolean | null
+          order_id?: string
+          otp_code?: string
+          store_id?: string
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_pickup_otps_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: true
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "store_pickup_otps_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      store_user_roles: {
+        Row: {
+          created_at: string | null
+          id: string
+          permission: Database["public"]["Enums"]["store_permission"]
+          store_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          permission?: Database["public"]["Enums"]["store_permission"]
+          store_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          permission?: Database["public"]["Enums"]["store_permission"]
+          store_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_user_roles_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stores: {
         Row: {
           address: string
+          authorized_users: string[] | null
           created_at: string
           id: string
           is_active: boolean | null
+          is_available: boolean | null
           latitude: number | null
           longitude: number | null
           manager_id: string | null
           name: string
+          total_sales: number | null
           updated_at: string
         }
         Insert: {
           address: string
+          authorized_users?: string[] | null
           created_at?: string
           id?: string
           is_active?: boolean | null
+          is_available?: boolean | null
           latitude?: number | null
           longitude?: number | null
           manager_id?: string | null
           name: string
+          total_sales?: number | null
           updated_at?: string
         }
         Update: {
           address?: string
+          authorized_users?: string[] | null
           created_at?: string
           id?: string
           is_active?: boolean | null
+          is_available?: boolean | null
           latitude?: number | null
           longitude?: number | null
           manager_id?: string | null
           name?: string
+          total_sales?: number | null
           updated_at?: string
         }
         Relationships: [
@@ -423,6 +524,10 @@ export type Database = {
           partner_id: string
         }[]
       }
+      has_store_access: {
+        Args: { _store_id: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       order_status:
@@ -432,6 +537,7 @@ export type Database = {
         | "in_transit"
         | "delivered"
         | "cancelled"
+      store_permission: "manager" | "staff" | "owner"
       user_role: "customer" | "store_manager" | "partner"
     }
     CompositeTypes: {
@@ -568,6 +674,7 @@ export const Constants = {
         "delivered",
         "cancelled",
       ],
+      store_permission: ["manager", "staff", "owner"],
       user_role: ["customer", "store_manager", "partner"],
     },
   },

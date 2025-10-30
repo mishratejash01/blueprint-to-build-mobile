@@ -9,6 +9,8 @@ interface Product {
   price: number;
   unit: string;
   image_url?: string;
+  is_available?: boolean;
+  store_id?: string;
 }
 
 interface ProductGridProps {
@@ -46,18 +48,25 @@ const ProductGrid = ({ products = [], title = "Best Sellers" }: ProductGridProps
             style={{ animationDelay: `${index * 50}ms` }}
           >
             <Link to={`/product/${product.id}`}>
-              <Card className="product-card group overflow-hidden border border-border">
+              <Card className={`product-card group overflow-hidden border border-border ${!product.is_available ? 'opacity-60' : ''}`}>
                 {/* Product Image */}
                 <div className="relative aspect-square bg-white p-4 border-b border-border">
                   {productImage ? (
                     <img 
                       src={productImage} 
                       alt={product.name}
-                      className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
+                      className={`w-full h-full object-contain group-hover:scale-105 transition-transform duration-300 ${!product.is_available ? 'grayscale' : ''}`}
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-6xl">
                       🛒
+                    </div>
+                  )}
+                  {!product.is_available && (
+                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                      <span className="bg-destructive text-white px-3 py-1 rounded-md text-sm font-semibold">
+                        Out of Stock
+                      </span>
                     </div>
                   )}
                 </div>
@@ -74,9 +83,13 @@ const ProductGrid = ({ products = [], title = "Best Sellers" }: ProductGridProps
                     <span className="font-bold text-lg text-[hsl(var(--text-primary))]">
                       ₹{product.price}
                     </span>
-                    <div onClick={(e) => e.preventDefault()}>
-                      <InlineCartControl product={product} />
-                    </div>
+                    {product.is_available !== false ? (
+                      <div onClick={(e) => e.preventDefault()}>
+                        <InlineCartControl product={product} />
+                      </div>
+                    ) : (
+                      <span className="text-xs text-destructive font-medium">Store Closed</span>
+                    )}
                   </div>
                 </div>
               </Card>

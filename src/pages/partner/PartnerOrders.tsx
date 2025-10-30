@@ -111,47 +111,53 @@ const PartnerOrders = () => {
   };
 
   const handleAcceptOrder = async (orderId: string) => {
-    console.log("Attempting to accept order:", orderId);
-    console.log("Order ID type:", typeof orderId);
-    
     try {
       const { data, error } = await supabase.rpc('accept_order', {
         order_id_to_accept: orderId
       });
 
-      console.log("Accept order response:", { data, error });
-
       if (error) {
-        console.error("Accept order error details:", {
-          message: error.message,
-          details: error.details,
-          hint: error.hint,
-          code: error.code
-        });
-        
         toast({
           title: "Order unavailable",
           description: error.message || "Sorry, this order was just taken by another partner",
           variant: "destructive"
         });
-        // Refresh the orders list
         fetchOrders();
-      } else {
-        console.log("Order accepted successfully:", data);
-        
-        // Sync updated order status to Google Sheets
-        supabase.functions.invoke('sync-orders-to-sheet', {
-          body: { order_id: orderId }
-        }).catch(err => console.error('Failed to sync to sheets:', err));
-        
-        toast({
-          title: "Order accepted!",
-          description: "Starting delivery"
-        });
-        navigate(`/partner/delivery/${orderId}`);
+        return;
       }
+
+      // Generate OTP for pickup verification
+      const { data: { session } } = await supabase.auth.getSession();
+      const otpResponse = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-pickup-otp`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${session?.access_token}`,
+          },
+          body: JSON.stringify({ orderId }),
+        }
+      );
+
+      if (!otpResponse.ok) {
+        console.error("Failed to generate OTP");
+      }
+
+      // Sync to Google Sheets
+      supabase.functions.invoke('sync-orders-to-sheet', {
+        body: { order_id: orderId }
+      }).catch(err => console.error('Failed to sync to sheets:', err));
+
+      toast({
+        title: "Order accepted!",
+        description: "Proceed to pickup verification"
+      });
+
+      // Navigate to OTP verification screen
+      navigate(`/partner/pickup-verify/${orderId}`);
     } catch (err) {
-      console.error("Caught exception:", err);
+      console.error("Error accepting order:", err);
       toast({
         title: "Error",
         description: "Failed to accept order",
