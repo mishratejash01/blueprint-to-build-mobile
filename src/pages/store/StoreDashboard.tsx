@@ -21,43 +21,73 @@ const StoreDashboard = () => {
   });
   const [storeInfo, setStoreInfo] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchStoreInfo();
-    fetchStats();
-    
-    // Subscribe to real-time order updates
-    const channel = supabase
-      .channel('store-orders')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'orders'
-      }, () => {
-        fetchStats();
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
   }, []);
+
+  useEffect(() => {
+    if (storeInfo?.id) {
+      fetchStats();
+      
+      // Subscribe to real-time order updates for this specific store
+      const channel = supabase
+        .channel('store-orders')
+        .on('postgres_changes', {
+          event: '*',
+          schema: 'public',
+          table: 'orders',
+          filter: `store_id=eq.${storeInfo.id}`
+        }, () => {
+          console.log('Order update received for store:', storeInfo.id);
+          fetchStats();
+        })
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    }
+  }, [storeInfo?.id]);
 
   const fetchStoreInfo = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) {
+        setError('Please log in to access the store dashboard');
+        setLoading(false);
+        return;
+      }
+
+      console.log('Fetching store info for user:', user.id);
 
       const { data, error } = await supabase
         .from('stores')
         .select('*')
         .or(`manager_id.eq.${user.id},authorized_users.cs.{${user.id}}`)
-        .single();
+        .maybeSingle();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching store info:', error);
+        setError('Failed to load store information');
+        setLoading(false);
+        return;
+      }
+
+      if (!data) {
+        console.error('No store found for user:', user.id);
+        setError('You are not authorized to access any store. Please contact the administrator.');
+        setLoading(false);
+        return;
+      }
+
+      console.log('Store loaded successfully:', data.name);
       setStoreInfo(data);
+      setError(null);
     } catch (error: any) {
-      console.error('Error fetching store info:', error);
+      console.error('Unexpected error in fetchStoreInfo:', error);
+      setError('An unexpected error occurred');
     } finally {
       setLoading(false);
     }
@@ -75,7 +105,10 @@ const StoreDashboard = () => {
       if (error) throw error;
 
       setStoreInfo({ ...storeInfo, is_available: checked });
-      toast.success(checked ? 'Store is now available' : 'Store is now closed');
+      toast.success(
+        checked ? '✅ Store is now OPEN for orders' : '❌ Store is now CLOSED',
+        { duration: 3000 }
+      );
     } catch (error: any) {
       toast.error('Failed to update store availability');
       console.error('Error:', error);
@@ -161,35 +194,96 @@ const StoreDashboard = () => {
     );
   }
 
+  if (error) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <Card className="max-w-md w-full">
+          <CardHeader>
+            <CardTitle className="text-destructive">Access Error</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-muted-foreground">{error}</p>
+            <Button 
+              onClick={() => {
+                setLoading(true);
+                setError(null);
+                fetchStoreInfo();
+              }} 
+              className="w-full"
+            >
+              Retry
+            </Button>
+            <Button 
+              onClick={handleLogout} 
+              variant="outline"
+              className="w-full"
+            >
+              Back to Login
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <ProtectedRoute>
       <div className="min-h-screen bg-background">
-        <div className="border-b bg-card">
+        <div className="border-b bg-card sticky top-0 z-10 shadow-sm">
           <div className="container mx-auto px-4 py-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
-                  <Store className="w-6 h-6 text-primary" />
+            <div className="grid grid-cols-3 items-center gap-4">
+              {/* Left: Store Icon & ID */}
+              <div className="flex items-center gap-2">
+                <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+                  <Store className="w-5 h-5 text-primary" />
                 </div>
-                <div>
-                  <h1 className="text-2xl font-bold text-foreground">{storeInfo?.name || 'Store Dashboard'}</h1>
-                  <p className="text-sm text-muted-foreground">{storeInfo?.address}</p>
-                </div>
+                <span className="text-xs text-muted-foreground font-mono">
+                  {storeInfo?.id?.slice(0, 8)}
+                </span>
               </div>
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-3 bg-muted/50 rounded-lg px-4 py-2">
+              
+              {/* Center: Store Name (PROMINENT) */}
+              <div className="text-center">
+                <h1 className="text-2xl font-bold text-foreground mb-1">
+                  {storeInfo?.name || 'Store Dashboard'}
+                </h1>
+                <p className="text-sm text-muted-foreground">
+                  {storeInfo?.address}
+                </p>
+              </div>
+              
+              {/* Right: Toggle & Logout */}
+              <div className="flex items-center justify-end gap-3">
+                <div className={`flex items-center gap-3 px-4 py-2.5 rounded-lg border-2 transition-all ${
+                  storeInfo?.is_available 
+                    ? 'bg-primary/10 border-primary/30' 
+                    : 'bg-muted border-border'
+                }`}>
+                  <div className="flex items-center gap-2">
+                    <span className={`text-2xl transition-all ${
+                      storeInfo?.is_available ? 'animate-pulse scale-110' : 'grayscale'
+                    }`}>
+                      {storeInfo?.is_available ? '✅' : '❌'}
+                    </span>
+                    <div className="flex flex-col">
+                      <span className="text-xs text-muted-foreground font-medium">
+                        Store Status
+                      </span>
+                      <span className={`text-base font-bold transition-colors ${
+                        storeInfo?.is_available 
+                          ? 'text-primary' 
+                          : 'text-muted-foreground'
+                      }`}>
+                        {storeInfo?.is_available ? 'OPEN' : 'CLOSED'}
+                      </span>
+                    </div>
+                  </div>
                   <Switch
                     id="store-availability"
                     checked={storeInfo?.is_available}
                     onCheckedChange={handleToggleAvailability}
+                    className="data-[state=checked]:bg-primary"
                   />
-                  <Label htmlFor="store-availability" className="text-sm font-medium cursor-pointer">
-                    {storeInfo?.is_available ? (
-                      <span className="text-primary">Store Open</span>
-                    ) : (
-                      <span className="text-muted-foreground">Store Closed</span>
-                    )}
-                  </Label>
                 </div>
                 <Button variant="ghost" size="icon" onClick={handleLogout}>
                   <LogOut className="w-5 h-5" />
