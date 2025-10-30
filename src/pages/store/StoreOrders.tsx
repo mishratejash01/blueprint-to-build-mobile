@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, User, Phone, MapPin, Package, Clock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -13,8 +14,10 @@ import { playOrderSound, showNotification, requestNotificationPermission } from 
 
 const StoreOrders = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [orders, setOrders] = useState<any[]>([]);
   const [pickupOtps, setPickupOtps] = useState<Record<string, any>>({});
+  const [activeFilter, setActiveFilter] = useState<string>(searchParams.get("filter") || "all");
 
   useEffect(() => {
     requestNotificationPermission();
@@ -25,6 +28,13 @@ const StoreOrders = () => {
       supabase.removeAllChannels();
     };
   }, []);
+
+  useEffect(() => {
+    const filter = searchParams.get("filter");
+    if (filter) {
+      setActiveFilter(filter);
+    }
+  }, [searchParams]);
 
   const subscribeToUpdates = () => {
     // Subscribe to new orders
@@ -192,26 +202,59 @@ const StoreOrders = () => {
     return minutes > 0 ? `${minutes} min` : "Expired";
   };
 
+  const filteredOrders = orders.filter((order) => {
+    if (activeFilter === "all") return true;
+    if (activeFilter === "pending") return order.status === "pending" || order.status === "ready_for_pickup";
+    if (activeFilter === "active") return order.status === "in_transit";
+    if (activeFilter === "completed") return order.status === "delivered";
+    return true;
+  });
+
   return (
     <ProtectedRoute>
       <div className="min-h-screen bg-background">
         <div className="sticky top-0 bg-background border-b z-10 p-4">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 mb-4">
             <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
               <ArrowLeft />
             </Button>
             <h1 className="text-xl font-bold">Orders</h1>
           </div>
+          
+          <Tabs value={activeFilter} onValueChange={setActiveFilter} className="w-full">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="all">All</TabsTrigger>
+              <TabsTrigger value="pending">
+                Pending
+                {orders.filter(o => o.status === "pending" || o.status === "ready_for_pickup").length > 0 && (
+                  <Badge className="ml-2 bg-accent text-accent-foreground">
+                    {orders.filter(o => o.status === "pending" || o.status === "ready_for_pickup").length}
+                  </Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="active">
+                Active
+                {orders.filter(o => o.status === "in_transit").length > 0 && (
+                  <Badge className="ml-2 bg-primary text-primary-foreground">
+                    {orders.filter(o => o.status === "in_transit").length}
+                  </Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="completed">Completed</TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
 
         <div className="p-4 space-y-4">
-          {orders.length === 0 ? (
+          {filteredOrders.length === 0 ? (
             <Card className="p-8 text-center">
               <Package className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
-              <p className="text-muted-foreground">No orders yet</p>
+              <p className="text-muted-foreground">
+                {activeFilter === "all" ? "No orders yet" : `No ${activeFilter} orders`}
+              </p>
             </Card>
           ) : (
-            orders.map((order) => {
+            filteredOrders.map((order) => {
               const otp = pickupOtps[order.id];
               const isExpired = otp && new Date(otp.expires_at) < new Date();
               

@@ -33,15 +33,18 @@ const StoreDashboard = () => {
       
       // Subscribe to real-time order updates for this specific store
       const channel = supabase
-        .channel('store-orders')
+        .channel('store-orders-changes')
         .on('postgres_changes', {
           event: '*',
           schema: 'public',
           table: 'orders',
           filter: `store_id=eq.${storeInfo.id}`
-        }, () => {
-          console.log('Order update received for store:', storeInfo.id);
-          fetchStats();
+        }, (payload) => {
+          console.log('Order update received for store:', storeInfo.id, payload);
+          // Add a small delay to ensure DB has committed the transaction
+          setTimeout(() => {
+            fetchStats();
+          }, 300);
         })
         .subscribe();
 
@@ -295,25 +298,31 @@ const StoreDashboard = () => {
 
         <div className="container mx-auto px-4 py-8">
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mb-8">
-            <Card>
+            <Card 
+              className="cursor-pointer hover:shadow-lg transition-all hover:scale-105"
+              onClick={() => navigate("/store/orders?filter=pending")}
+            >
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Pending Orders</CardTitle>
                 <Clock className="h-4 w-4 text-accent" />
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold text-accent">{stats.pendingOrders}</div>
-                <p className="text-xs text-muted-foreground mt-1">Needs preparation</p>
+                <p className="text-xs text-muted-foreground mt-1">Needs preparation • Click to view</p>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card 
+              className="cursor-pointer hover:shadow-lg transition-all hover:scale-105"
+              onClick={() => navigate("/store/orders?filter=active")}
+            >
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Active Deliveries</CardTitle>
                 <ShoppingCart className="h-4 w-4 text-primary" />
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold text-primary">{stats.activeDeliveries}</div>
-                <p className="text-xs text-muted-foreground mt-1">Out for delivery</p>
+                <p className="text-xs text-muted-foreground mt-1">Out for delivery • Click to view</p>
               </CardContent>
             </Card>
 
