@@ -1,4 +1,5 @@
-const CACHE_NAME = 'veggieit-v1';
+// public/sw.js
+const CACHE_NAME = 'veggieit-v2'; // Bumped cache version
 const urlsToCache = [
   '/',
   '/index.html',
@@ -19,7 +20,7 @@ self.addEventListener('activate', (event) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
           if (cacheName !== CACHE_NAME) {
-            return caches.delete(cacheName);
+            return caches.delete(cacheName); // Deletes old 'veggieit-v1' cache
           }
         })
       );
@@ -28,24 +29,24 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
+// MODIFIED: Network First Strategy
 self.addEventListener('fetch', (event) => {
   event.respondWith(
-    caches.match(event.request)
+    fetch(event.request) // 1. Try to fetch from the network
       .then((response) => {
-        if (response) {
-          return response;
-        }
-        return fetch(event.request).then((response) => {
-          if (!response || response.status !== 200 || response.type !== 'basic') {
-            return response;
-          }
+        // 2. If successful, cache the new response
+        if (response && response.status === 200 && response.type === 'basic') {
           const responseToCache = response.clone();
           caches.open(CACHE_NAME)
             .then((cache) => {
               cache.put(event.request, responseToCache);
             });
-          return response;
-        });
+        }
+        return response;
+      })
+      .catch(() => {
+        // 3. If network fails, fall back to the cache
+        return caches.match(event.request);
       })
   );
 });
