@@ -534,6 +534,7 @@ export type Database = {
         | "pending"
         | "processing"
         | "ready_for_pickup"
+        | "awaiting_pickup_verification"
         | "in_transit"
         | "delivered"
         | "cancelled"
@@ -670,6 +671,7 @@ export const Constants = {
         "pending",
         "processing",
         "ready_for_pickup",
+        "awaiting_pickup_verification",
         "in_transit",
         "delivered",
         "cancelled",

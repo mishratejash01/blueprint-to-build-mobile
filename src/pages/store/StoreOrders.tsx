@@ -182,6 +182,7 @@ const StoreOrders = () => {
     const colors: Record<string, string> = {
       pending: "bg-yellow-100 text-yellow-800 border-yellow-200",
       ready_for_pickup: "bg-blue-100 text-blue-800 border-blue-200",
+      awaiting_pickup_verification: "bg-purple-100 text-purple-800 border-purple-200",
       in_transit: "bg-orange-100 text-orange-800 border-orange-200",
       delivered: "bg-green-100 text-green-800 border-green-200"
     };
@@ -205,7 +206,7 @@ const StoreOrders = () => {
   const filteredOrders = orders.filter((order) => {
     if (activeFilter === "all") return true;
     if (activeFilter === "pending") return order.status === "pending" || order.status === "ready_for_pickup";
-    if (activeFilter === "active") return order.status === "in_transit";
+    if (activeFilter === "active") return order.status === "awaiting_pickup_verification" || order.status === "in_transit";
     if (activeFilter === "completed") return order.status === "delivered";
     return true;
   });
@@ -234,9 +235,9 @@ const StoreOrders = () => {
               </TabsTrigger>
               <TabsTrigger value="active">
                 Active
-                {orders.filter(o => o.status === "in_transit").length > 0 && (
+                {orders.filter(o => o.status === "awaiting_pickup_verification" || o.status === "in_transit").length > 0 && (
                   <Badge className="ml-2 bg-primary text-primary-foreground">
-                    {orders.filter(o => o.status === "in_transit").length}
+                    {orders.filter(o => o.status === "awaiting_pickup_verification" || o.status === "in_transit").length}
                   </Badge>
                 )}
               </TabsTrigger>
