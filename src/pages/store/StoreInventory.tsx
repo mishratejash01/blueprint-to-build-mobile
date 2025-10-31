@@ -89,12 +89,16 @@ const StoreInventory = () => {
       return;
     }
 
+    console.log('💾 Saving product with category_id:', formData.category_id);
+    console.log('📦 Full form data:', formData);
+
     const productData = {
       store_id: storeId,
       name: formData.name,
       price: parseFloat(formData.price),
       unit: formData.unit,
       stock_quantity: parseInt(formData.stock_level),
+      category_id: formData.category_id || null,
       category: formData.category,
       image_url: formData.image_url || null,
       description: formData.description || null,
@@ -251,7 +255,9 @@ const StoreInventory = () => {
                     <Select 
                       value={formData.category_id} 
                       onValueChange={(value) => {
+                        console.log('✅ Selected category ID:', value);
                         const selectedCategory = categories.find(c => c.id === value);
+                        console.log('📂 Found category:', selectedCategory);
                         setFormData({ 
                           ...formData, 
                           category_id: value,
