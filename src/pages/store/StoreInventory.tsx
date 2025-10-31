@@ -26,6 +26,7 @@ const StoreInventory = () => {
     price: "",
     unit: "kg",
     stock_level: "",
+    category_id: "",
     category: "",
     image_url: "",
     description: ""
@@ -136,7 +137,7 @@ const StoreInventory = () => {
 
     setDialogOpen(false);
     setEditingProduct(null);
-    setFormData({ name: "", price: "", unit: "kg", stock_level: "", category: "", image_url: "", description: "" });
+    setFormData({ name: "", price: "", unit: "kg", stock_level: "", category_id: "", category: "", image_url: "", description: "" });
     fetchStoreAndProducts();
   };
 
@@ -170,6 +171,7 @@ const StoreInventory = () => {
       price: product.price.toString(),
       unit: product.unit,
       stock_level: product.stock_quantity?.toString() || product.stock_level?.toString() || "0",
+      category_id: product.category_id || "",
       category: product.category || "",
       image_url: product.image_url || "",
       description: product.description || ""
@@ -247,8 +249,15 @@ const StoreInventory = () => {
                   <div>
                     <Label htmlFor="category">Category</Label>
                     <Select 
-                      value={formData.category} 
-                      onValueChange={(value) => setFormData({ ...formData, category: value })}
+                      value={formData.category_id} 
+                      onValueChange={(value) => {
+                        const selectedCategory = categories.find(c => c.id === value);
+                        setFormData({ 
+                          ...formData, 
+                          category_id: value,
+                          category: selectedCategory?.name || ''
+                        });
+                      }}
                     >
                       <SelectTrigger className="w-full">
                         <SelectValue placeholder="Select a category" />
@@ -260,7 +269,7 @@ const StoreInventory = () => {
                           </div>
                         ) : (
                           categories.map((category) => (
-                            <SelectItem key={category.id} value={category.name}>
+                            <SelectItem key={category.id} value={category.id}>
                               {category.name}
                             </SelectItem>
                           ))
