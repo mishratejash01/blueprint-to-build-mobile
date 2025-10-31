@@ -4,8 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { ArrowLeft, Plus, Edit } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { ArrowLeft, Plus, Edit, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -22,7 +24,9 @@ const StoreInventory = () => {
     price: "",
     unit: "kg",
     stock_level: "",
-    category: ""
+    category: "",
+    image_url: "",
+    description: ""
   });
 
   useEffect(() => {
@@ -71,8 +75,10 @@ const StoreInventory = () => {
       name: formData.name,
       price: parseFloat(formData.price),
       unit: formData.unit,
-      stock_level: parseInt(formData.stock_level),
+      stock_quantity: parseInt(formData.stock_level),
       category: formData.category,
+      image_url: formData.image_url || null,
+      description: formData.description || null,
       is_available: true
     };
 
@@ -112,7 +118,30 @@ const StoreInventory = () => {
 
     setDialogOpen(false);
     setEditingProduct(null);
-    setFormData({ name: "", price: "", unit: "kg", stock_level: "", category: "" });
+    setFormData({ name: "", price: "", unit: "kg", stock_level: "", category: "", image_url: "", description: "" });
+    fetchStoreAndProducts();
+  };
+
+  const handleDelete = async (productId: string) => {
+    const { error } = await supabase
+      .from("products")
+      .delete()
+      .eq("id", productId);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive"
+      });
+      return;
+    }
+
+    toast({
+      title: "Success",
+      description: "Product deleted successfully"
+    });
+
     fetchStoreAndProducts();
   };
 
@@ -122,8 +151,10 @@ const StoreInventory = () => {
       name: product.name,
       price: product.price.toString(),
       unit: product.unit,
-      stock_level: product.stock_level.toString(),
-      category: product.category || ""
+      stock_level: product.stock_quantity?.toString() || product.stock_level?.toString() || "0",
+      category: product.category || "",
+      image_url: product.image_url || "",
+      description: product.description || ""
     });
     setDialogOpen(true);
   };
@@ -203,6 +234,40 @@ const StoreInventory = () => {
                       onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                     />
                   </div>
+                  <div>
+                    <Label htmlFor="image_url">Image URL</Label>
+                    <Input
+                      id="image_url"
+                      type="url"
+                      placeholder="https://example.com/product-image.jpg"
+                      value={formData.image_url}
+                      onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
+                    />
+                    {formData.image_url && (
+                      <div className="mt-2 border rounded-lg p-2 bg-muted/50">
+                        <img 
+                          src={formData.image_url} 
+                          alt="Preview" 
+                          className="w-full h-32 object-contain rounded"
+                          onError={(e) => {
+                            e.currentTarget.src = '';
+                            e.currentTarget.alt = '❌ Invalid image URL';
+                            e.currentTarget.className = 'w-full h-32 flex items-center justify-center text-muted-foreground';
+                          }}
+                        />
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <Label htmlFor="description">Description</Label>
+                    <Textarea
+                      id="description"
+                      placeholder="Product description, ingredients, or additional details..."
+                      value={formData.description}
+                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                      rows={4}
+                    />
+                  </div>
                   <Button type="submit" className="w-full">
                     {editingProduct ? "Update Product" : "Add Product"}
                   </Button>
@@ -222,28 +287,86 @@ const StoreInventory = () => {
               </Button>
             </Card>
           ) : (
-            products.map((product) => (
-              <Card key={product.id} className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="font-semibold">{product.name}</h3>
-                    <p className="text-sm text-muted-foreground">
-                      ₹{product.price} per {product.unit}
-                    </p>
-                    <p className="text-sm">
-                      Stock: {product.stock_level}
-                    </p>
+            products.map((product) => {
+              const stockLevel = product.stock_quantity ?? product.stock_level ?? 0;
+              const stockColor = stockLevel > 10 ? "text-green-600" : stockLevel > 0 ? "text-yellow-600" : "text-red-600";
+              
+              return (
+                <Card key={product.id} className="p-4 hover:shadow-md transition-shadow">
+                  <div className="flex items-start gap-4">
+                    {product.image_url ? (
+                      <img 
+                        src={product.image_url} 
+                        alt={product.name}
+                        className="w-20 h-20 object-cover rounded-lg"
+                        onError={(e) => {
+                          e.currentTarget.src = '';
+                          e.currentTarget.alt = '🛒';
+                          e.currentTarget.className = 'w-20 h-20 flex items-center justify-center text-4xl bg-muted rounded-lg';
+                        }}
+                      />
+                    ) : (
+                      <div className="w-20 h-20 flex items-center justify-center text-4xl bg-muted rounded-lg">
+                        🛒
+                      </div>
+                    )}
+                    <div className="flex-1">
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <h3 className="font-semibold text-lg">{product.name}</h3>
+                          <p className="text-sm text-muted-foreground">
+                            ₹{product.price} per {product.unit}
+                          </p>
+                          {product.category && (
+                            <span className="inline-block mt-1 px-2 py-1 text-xs bg-primary/10 text-primary rounded-full">
+                              {product.category}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => handleEdit(product)}
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="destructive" size="icon">
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Delete Product?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  This will permanently delete "{product.name}". This action cannot be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleDelete(product.id)}>
+                                  Delete
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
+                      </div>
+                      <div className="mt-2 flex items-center gap-4 text-sm">
+                        <p className={stockColor}>
+                          Stock: <span className="font-semibold">{stockLevel}</span>
+                        </p>
+                        {product.description && (
+                          <p className="text-muted-foreground truncate">{product.description}</p>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => handleEdit(product)}
-                  >
-                    <Edit className="w-4 h-4" />
-                  </Button>
-                </div>
-              </Card>
-            ))
+                </Card>
+              );
+            })
           )}
         </div>
       </div>
