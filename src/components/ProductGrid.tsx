@@ -48,23 +48,23 @@ const ProductGrid = ({ products = [], title = "Best Sellers" }: ProductGridProps
             style={{ animationDelay: `${index * 50}ms` }}
           >
             <Link to={`/product/${product.id}`}>
-              <Card className={`product-card group overflow-hidden border border-border ${!product.is_available ? 'opacity-60' : ''}`}>
+              <Card className={`product-card group overflow-hidden border border-border shadow-elegant hover:shadow-glow hover:border-primary/30 hover:-translate-y-1 ${!product.is_available ? 'opacity-60' : ''}`}>
                 {/* Product Image */}
-                <div className="relative aspect-square bg-white p-4 border-b border-border">
+                <div className="relative aspect-square bg-gradient-subtle p-4 border-b border-border">
                   {productImage ? (
                     <img 
                       src={productImage} 
                       alt={product.name}
-                      className={`w-full h-full object-contain group-hover:scale-105 transition-transform duration-300 ${!product.is_available ? 'grayscale' : ''}`}
+                      className={`w-full h-full object-contain group-hover:scale-110 transition-transform duration-300 drop-shadow-md ${!product.is_available ? 'grayscale' : ''}`}
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-6xl">
+                    <div className="w-full h-full flex items-center justify-center text-6xl drop-shadow-lg">
                       🛒
                     </div>
                   )}
                   {!product.is_available && (
-                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                      <span className="bg-destructive text-white px-3 py-1 rounded-md text-sm font-semibold">
+                    <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center">
+                      <span className="bg-destructive text-white px-4 py-2 rounded-xl text-sm font-bold shadow-strong">
                         Out of Stock
                       </span>
                     </div>
@@ -73,14 +73,14 @@ const ProductGrid = ({ products = [], title = "Best Sellers" }: ProductGridProps
                 
                 {/* Product Info */}
                 <div className="p-3 space-y-2 bg-white">
-                  <h3 className="font-semibold text-sm text-[hsl(var(--text-primary))] line-clamp-2 min-h-[2.5rem] leading-tight">
+                  <h3 className="font-bold text-sm text-[hsl(var(--text-primary))] line-clamp-2 min-h-[2.5rem] leading-tight group-hover:text-primary transition-colors">
                     {product.name}
                   </h3>
-                  <p className="text-xs text-[hsl(var(--text-secondary))]">
+                  <p className="text-xs text-[hsl(var(--text-secondary))] font-medium">
                     {product.unit}
                   </p>
                   <div className="flex items-center justify-between pt-1">
-                    <span className="font-bold text-lg text-[hsl(var(--text-primary))]">
+                    <span className="font-bold text-lg text-primary">
                       ₹{product.price}
                     </span>
                     {product.is_available !== false ? (
@@ -88,7 +88,7 @@ const ProductGrid = ({ products = [], title = "Best Sellers" }: ProductGridProps
                         <InlineCartControl product={product} />
                       </div>
                     ) : (
-                      <span className="text-xs text-destructive font-medium">Store Closed</span>
+                      <span className="text-xs text-destructive font-bold">Store Closed</span>
                     )}
                   </div>
                 </div>

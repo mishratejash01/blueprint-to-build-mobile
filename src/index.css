@@ -44,13 +44,16 @@
     --gradient-accent: linear-gradient(135deg, hsl(142 76% 36%), hsl(142 76% 44%));
     --gradient-subtle: linear-gradient(180deg, hsl(0 0% 100%), hsl(0 0% 98%));
     
-    /* Blinkit-style subtle shadows */
+    /* Premium shadows and effects */
     --shadow-soft: 0 2px 8px rgba(0, 0, 0, 0.04);
     --shadow-card: 0 4px 12px rgba(0, 0, 0, 0.05);
     --shadow-card-hover: 0 6px 20px rgba(0, 0, 0, 0.08);
     --shadow-medium: 0 4px 16px rgba(0, 0, 0, 0.06);
     --shadow-strong: 0 8px 24px rgba(0, 0, 0, 0.1);
     --shadow-primary: 0 4px 16px rgba(0, 179, 74, 0.15);
+    --shadow-premium: 0 10px 40px -10px rgba(0, 179, 74, 0.2), 0 0 0 1px rgba(0, 0, 0, 0.05);
+    --shadow-elegant: 0 10px 30px -10px rgba(0, 179, 74, 0.3);
+    --shadow-glow: 0 0 40px rgba(0, 179, 74, 0.4);
     
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     --transition-fast: all 0.15s ease;
@@ -121,6 +124,15 @@
   html {
     -webkit-tap-highlight-color: transparent;
   }
+  
+  /* Safe area support for mobile devices */
+  .safe-area-inset-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  
+  .safe-area-inset-top {
+    padding-top: env(safe-area-inset-top);
+  }
 }
 
 @layer components {
@@ -187,6 +199,18 @@
   
   .shadow-strong {
     box-shadow: var(--shadow-strong);
+  }
+  
+  .shadow-premium {
+    box-shadow: var(--shadow-premium);
+  }
+  
+  .shadow-elegant {
+    box-shadow: var(--shadow-elegant);
+  }
+  
+  .shadow-glow {
+    box-shadow: var(--shadow-glow);
   }
   
   @keyframes pulse-custom {

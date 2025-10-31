@@ -43,21 +43,21 @@ const CategoryScroll = ({ categories = [], title = "Shop by Category" }: Categor
               className="inline-block"
               style={{ animationDelay: `${index * 50}ms` }}
             >
-              <Card className="category-card w-[140px] h-[160px] flex flex-col items-center justify-center gap-3 border border-border bg-white overflow-hidden p-4 cursor-pointer">
+              <Card className="category-card w-[140px] h-[160px] flex flex-col items-center justify-center gap-3 border border-border bg-white overflow-hidden p-4 cursor-pointer hover:shadow-elegant hover:border-primary/30 hover:-translate-y-1 transition-all group">
                 {categoryImg ? (
-                  <div className="w-full h-[100px] flex items-center justify-center">
+                  <div className="w-full h-[100px] flex items-center justify-center group-hover:scale-110 transition-transform">
                     <img 
                       src={categoryImg} 
                       alt={category.name}
-                      className="max-w-full max-h-full object-contain"
+                      className="max-w-full max-h-full object-contain drop-shadow-md"
                     />
                   </div>
                 ) : (
-                  <div className="w-20 h-20 bg-primary/5 rounded-2xl flex items-center justify-center">
-                    <ShoppingBag className="h-10 w-10 text-primary" strokeWidth={1.5} />
+                  <div className="w-20 h-20 bg-gradient-subtle rounded-2xl flex items-center justify-center shadow-sm group-hover:shadow-elegant transition-shadow">
+                    <ShoppingBag className="h-10 w-10 text-primary group-hover:scale-110 transition-transform" strokeWidth={1.5} />
                   </div>
                 )}
-                <span className="text-sm text-center font-semibold text-[hsl(var(--text-primary))] line-clamp-2 leading-tight">
+                <span className="text-sm text-center font-bold text-[hsl(var(--text-primary))] line-clamp-2 leading-tight group-hover:text-primary transition-colors">
                   {category.name}
                 </span>
               </Card>
