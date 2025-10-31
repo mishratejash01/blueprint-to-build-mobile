@@ -70,8 +70,22 @@ const Search = () => {
             {results.map((product) => (
               <Link key={product.id} to={`/product/${product.id}`}>
                 <Card className="overflow-hidden hover-lift cursor-pointer">
-                  <div className="aspect-square bg-muted flex items-center justify-center text-6xl">
-                    {product.image_url || "🛒"}
+                  <div className="aspect-square bg-white p-4 border-b border-border">
+                    {product.image_url ? (
+                      <img 
+                        src={product.image_url} 
+                        alt={product.name}
+                        className="w-full h-full object-contain hover:scale-105 transition-transform duration-300"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                          e.currentTarget.parentElement!.innerHTML = '<div class="w-full h-full flex items-center justify-center text-6xl">🛒</div>';
+                        }}
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-6xl">
+                        🛒
+                      </div>
+                    )}
                   </div>
                   <div className="p-3">
                     <h3 className="font-semibold text-sm mb-1">{product.name}</h3>
