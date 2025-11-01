@@ -17,14 +17,54 @@ const ProtectedRoute = ({ children, requireAuth = true, allowedRoles }: Protecte
   const [loading, setLoading] = useState(true);
   const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [roleChecked, setRoleChecked] = useState(false);
+  const [loadingTimeout, setLoadingTimeout] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
+    let mounted = true;
+    
+    // Set timeout to prevent infinite loading (3 seconds)
+    const timer = setTimeout(() => {
+      if (mounted && loading) {
+        setLoadingTimeout(true);
+        setLoading(false);
+        setRoleChecked(true);
+      }
+    }, 3000);
+
+    // Cache key for role to reduce DB queries
+    const getCachedRole = () => {
+      try {
+        return sessionStorage.getItem('userRole') as UserRole | null;
+      } catch {
+        return null;
+      }
+    };
+
+    const setCachedRole = (role: UserRole) => {
+      try {
+        sessionStorage.setItem('userRole', role);
+      } catch (err) {
+        console.error('Failed to cache role:', err);
+      }
+    };
+
     // Get initial session and role
     supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (!mounted) return;
+      
       setSession(session);
       
       if (session && allowedRoles) {
+        // Try to get cached role first
+        const cachedRole = getCachedRole();
+        if (cachedRole) {
+          setUserRole(cachedRole);
+          setRoleChecked(true);
+          setLoading(false);
+          return;
+        }
+
         // Fetch user role from database
         const { data: profile } = await supabase
           .from("profiles")
@@ -32,7 +72,11 @@ const ProtectedRoute = ({ children, requireAuth = true, allowedRoles }: Protecte
           .eq("id", session.user.id)
           .single();
         
-        setUserRole(profile?.role as UserRole || null);
+        if (!mounted) return;
+        
+        const role = profile?.role as UserRole || null;
+        setUserRole(role);
+        if (role) setCachedRole(role);
       }
       
       setRoleChecked(true);
@@ -41,6 +85,8 @@ const ProtectedRoute = ({ children, requireAuth = true, allowedRoles }: Protecte
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (!mounted) return;
+      
       setSession(session);
       
       if (session && allowedRoles) {
@@ -51,16 +97,38 @@ const ProtectedRoute = ({ children, requireAuth = true, allowedRoles }: Protecte
           .eq("id", session.user.id)
           .single();
         
-        setUserRole(profile?.role as UserRole || null);
+        if (!mounted) return;
+        
+        const role = profile?.role as UserRole || null;
+        setUserRole(role);
+        if (role) setCachedRole(role);
+      } else {
+        // Clear cached role on logout
+        sessionStorage.removeItem('userRole');
       }
       
       setRoleChecked(true);
       setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      clearTimeout(timer);
+      subscription.unsubscribe();
+    };
   }, [allowedRoles]);
 
+  // If timeout reached and no session, show error
+  if (loadingTimeout && !session && requireAuth) {
+    toast({
+      title: "Connection Issue",
+      description: "Please check your connection and try again",
+      variant: "destructive"
+    });
+    return <Navigate to="/auth" replace />;
+  }
+
+  // Show loading only for a short time
   if (loading || !roleChecked) {
     return (
       <div className="min-h-screen flex items-center justify-center">

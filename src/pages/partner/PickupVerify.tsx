@@ -47,9 +47,22 @@ const PickupVerify = () => {
       return;
     }
 
+    if (attempts >= 3) {
+      toast.error("Maximum attempts reached. Please contact support.");
+      return;
+    }
+
     setLoading(true);
     try {
-      // Use supabase.functions.invoke instead of fetch for proper JWT handling
+      // Refresh session before making edge function call to ensure JWT is valid
+      const { data: { session }, error: sessionError } = 
+        await supabase.auth.refreshSession();
+      
+      if (sessionError || !session) {
+        throw new Error("Session expired. Please log in again.");
+      }
+
+      // Use supabase.functions.invoke for proper JWT handling
       const { data, error } = await supabase.functions.invoke('verify-pickup-otp', {
         body: {
           orderId,
@@ -66,10 +79,11 @@ const PickupVerify = () => {
       }
 
       toast.success("Pickup verified! Starting delivery...");
-      navigate(`/partner/delivery/${orderId}`);
+      navigate(`/partner/delivery/${orderId}`, { replace: true });
     } catch (error: any) {
       setAttempts(prev => prev + 1);
-      toast.error(error.message || "Verification failed");
+      console.error("OTP verification error:", error);
+      toast.error(error.message || "Invalid OTP. Please try again.");
       setOtp("");
     } finally {
       setLoading(false);

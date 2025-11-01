@@ -27,53 +27,52 @@ const Auth = () => {
   const [searchParams] = useSearchParams();
   const userType = searchParams.get("type") || "customer";
 
-  // Redirect based on actual user role from database
+  // Consolidated auth state management - single source of truth
   useEffect(() => {
-    // Set up auth state listener first
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      setSession(session);
-      if (session) {
-        // Fetch actual user role from database
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("role")
-          .eq("id", session.user.id)
-          .single();
+    let mounted = true;
 
-        // Redirect based on actual role, not URL parameter
-        if (profile?.role === "store_manager") {
-          navigate("/store/dashboard");
-        } else if (profile?.role === "partner") {
-          navigate("/partner/dashboard");
-        } else {
-          navigate("/home");
+    // Set up auth state listener ONCE
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (!mounted) return;
+        
+        setSession(session);
+        
+        if (session) {
+          // Fetch actual user role from database
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("role")
+            .eq("id", session.user.id)
+            .single();
+
+          if (!mounted) return;
+
+          // Single redirect based on actual role
+          if (profile?.role === "store_manager") {
+            navigate("/store/dashboard", { replace: true });
+          } else if (profile?.role === "partner") {
+            navigate("/partner/dashboard", { replace: true });
+          } else {
+            navigate("/home", { replace: true });
+          }
         }
+      }
+    );
+
+    // Check initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!mounted) return;
+      if (session) {
+        setSession(session);
+        // Trigger auth state change handler for initial session
       }
     });
 
-    // Then check for existing session
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      setSession(session);
-      if (session) {
-        // Fetch actual user role from database
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("role")
-          .eq("id", session.user.id)
-          .single();
-
-        // Redirect based on actual role, not URL parameter
-        if (profile?.role === "store_manager") {
-          navigate("/store/dashboard");
-        } else if (profile?.role === "partner") {
-          navigate("/partner/dashboard");
-        } else {
-          navigate("/home");
-        }
-      }
-    });
-
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, [navigate]);
 
 

@@ -78,15 +78,18 @@ const PartnerOrders = () => {
       setAvailableOrders([]);
     }
 
-    // Get active order
-    const { data: active, error: activeError } = await supabase
+    // Get active orders (can be multiple if partner hasn't completed previous ones)
+    const { data: activeOrders, error: activeError } = await supabase
       .from("orders")
       .select("*")
       .eq("delivery_partner_id", user.id)
-      .eq("status", "in_transit")
-      .maybeSingle();
+      .in("status", ["awaiting_pickup_verification", "in_transit"])
+      .order("created_at", { ascending: false });
 
-    console.log("Active order query result:", { active, activeError });
+    console.log("Active orders query result:", { activeOrders, activeError });
+    
+    // Take the most recent active order
+    const active = activeOrders && activeOrders.length > 0 ? activeOrders[0] : null;
     
     if (active) {
       const { data: store } = await supabase
