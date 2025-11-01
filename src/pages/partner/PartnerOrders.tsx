@@ -127,21 +127,19 @@ const PartnerOrders = () => {
       }
 
       // Generate OTP for pickup verification
-      const { data: { session } } = await supabase.auth.getSession();
-      const otpResponse = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-pickup-otp`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${session?.access_token}`,
-          },
-          body: JSON.stringify({ orderId }),
-        }
-      );
+      const { data: otpData, error: otpError } = await supabase.functions.invoke('generate-pickup-otp', {
+        body: { orderId },
+      });
 
-      if (!otpResponse.ok) {
-        console.error("Failed to generate OTP");
+      if (otpError) {
+        console.error("Failed to generate OTP:", otpError);
+        toast({
+          title: "Warning",
+          description: "Order accepted, but OTP generation failed. Please try again.",
+          variant: "destructive"
+        });
+      } else {
+        console.log("OTP generated successfully:", otpData);
       }
 
       // Sync to Google Sheets

@@ -49,27 +49,20 @@ const PickupVerify = () => {
 
     setLoading(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/verify-pickup-otp`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${session?.access_token}`,
-          },
-          body: JSON.stringify({
-            orderId,
-            otpCode: otp,
-          }),
-        }
-      );
+      // Use supabase.functions.invoke instead of fetch for proper JWT handling
+      const { data, error } = await supabase.functions.invoke('verify-pickup-otp', {
+        body: {
+          orderId,
+          otpCode: otp,
+        },
+      });
 
-      const result = await response.json();
+      if (error) {
+        throw new Error(error.message || "Verification failed");
+      }
 
-      if (!response.ok) {
-        throw new Error(result.error || "Verification failed");
+      if (!data.success) {
+        throw new Error(data.error || "Verification failed");
       }
 
       toast.success("Pickup verified! Starting delivery...");
