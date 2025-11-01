@@ -124,16 +124,13 @@ const ProtectedRoute = ({ children, requireAuth = true, allowedRoles }: Protecte
     return null;
   }
 
-  // CRITICAL FIX: Show content optimistically with non-blocking overlay
+  // Simple loading screen without blocking overlay
   if (loading || !roleChecked) {
     return (
-      <div className="relative min-h-screen">
-        {children}
-        <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50 pointer-events-none">
-          <div className="bg-card p-6 rounded-xl shadow-xl">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-            <p className="mt-2 text-sm text-muted-foreground">Verifying access...</p>
-          </div>
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Verifying access...</p>
         </div>
       </div>
     );

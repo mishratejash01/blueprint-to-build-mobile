@@ -53,22 +53,32 @@ const PartnerDashboard = () => {
 
   const handleToggleAvailability = async (checked: boolean) => {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!user) {
+      console.error("❌ No user found");
+      return;
+    }
 
-    // Update availability in dedicated column (optimized)
+    console.log("🔄 Toggling availability to:", checked);
+
     const { error } = await supabase
       .from("profiles")
       .update({ is_available: checked })
       .eq("id", user.id);
 
     if (error) {
+      console.error("❌ Toggle failed:", error);
       toast({
         title: "Error",
         description: error.message,
         variant: "destructive"
       });
     } else {
+      console.log("✅ Toggle successful");
       setIsAvailable(checked);
+      
+      // CRITICAL: Refetch data to ensure UI is in sync
+      await fetchPartnerData();
+      
       toast({
         title: checked ? "You're now online" : "You're now offline",
         description: checked ? "You'll receive delivery requests" : "You won't receive new requests"

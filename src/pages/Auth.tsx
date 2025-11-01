@@ -29,17 +29,24 @@ const Auth = () => {
 
   const [isRedirecting, setIsRedirecting] = useState(false);
 
-  // Simplified auth state management with retry logic - prevent race conditions
+  // FIXED: Only redirect if session exists, listen for login events
   useEffect(() => {
     let mounted = true;
-    let timeoutId: NodeJS.Timeout;
     
     const checkAuth = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         
-        if (!mounted || !session) return;
+        // CRITICAL: Only proceed if session exists
+        if (!mounted) return;
         
+        if (!session) {
+          // No session = user needs to login, DON'T interfere
+          setIsRedirecting(false);
+          return;
+        }
+        
+        // Session exists, proceed with redirect
         console.log("✅ Session found, fetching profile...");
         setIsRedirecting(true);
         
@@ -87,21 +94,22 @@ const Auth = () => {
       }
     };
     
-    // Set timeout to force redirect if stuck (max 5 seconds)
-    timeoutId = setTimeout(() => {
-      if (isRedirecting && mounted) {
-        console.warn("⚠️ Redirect timeout - forcing navigation");
-        window.location.href = "/home";
-      }
-    }, 5000);
-    
     checkAuth();
+    
+    // Listen for successful login events
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session && mounted) {
+        console.log("🔐 User just signed in, redirecting...");
+        setIsRedirecting(true);
+        checkAuth();
+      }
+    });
     
     return () => { 
       mounted = false;
-      clearTimeout(timeoutId);
+      subscription.unsubscribe();
     };
-  }, []); // Empty dependency - only run once on mount
+  }, []);
 
 
   // --- handleSignUp remains the same ---
