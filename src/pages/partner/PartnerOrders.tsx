@@ -139,11 +139,14 @@ const PartnerOrders = () => {
 
   const handleAcceptOrder = async (orderId: string) => {
     try {
+      sonnerToast.loading("Accepting order...");
+      
       const { data, error } = await supabase.rpc('accept_order', {
         order_id_to_accept: orderId
       });
 
       if (error) {
+        sonnerToast.dismiss();
         toast({
           title: "Order unavailable",
           description: error.message || "Sorry, this order was just taken by another partner",
@@ -152,6 +155,8 @@ const PartnerOrders = () => {
         fetchOrders();
         return;
       }
+      
+      sonnerToast.dismiss();
 
       // Generate OTP for pickup verification
       const { data: otpData, error: otpError } = await supabase.functions.invoke('generate-pickup-otp', {

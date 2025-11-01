@@ -89,8 +89,29 @@ const PartnerProfile = () => {
   };
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
-    navigate("/auth?type=partner");
+    try {
+      await supabase.removeAllChannels();
+      sessionStorage.clear();
+      
+      const keysToRemove = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && !key.startsWith('sb-')) {
+          keysToRemove.push(key);
+        }
+      }
+      keysToRemove.forEach(key => localStorage.removeItem(key));
+      
+      await supabase.auth.signOut();
+      navigate("/auth?type=partner", { replace: true });
+      
+      setTimeout(() => {
+        window.location.href = "/auth?type=partner";
+      }, 100);
+    } catch (error) {
+      console.error("Logout error:", error);
+      window.location.href = "/auth?type=partner";
+    }
   };
 
   if (loading) {

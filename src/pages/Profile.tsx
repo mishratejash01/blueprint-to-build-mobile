@@ -107,34 +107,6 @@ const Profile = () => {
     }
   };
 
-  const handleClearAppData = async () => {
-    if (!confirm("⚠️ This will clear all local data and log you out. Continue?")) {
-      return;
-    }
-    
-    try {
-      // Clear everything
-      await supabase.removeAllChannels();
-      sessionStorage.clear();
-      localStorage.clear();
-      
-      // Clear service worker cache if exists
-      if ('caches' in window) {
-        const cacheNames = await caches.keys();
-        await Promise.all(cacheNames.map(name => caches.delete(name)));
-      }
-      
-      toast.success("App data cleared!");
-      
-      // Force reload
-      setTimeout(() => {
-        window.location.href = "/auth";
-      }, 500);
-    } catch (error) {
-      console.error("Clear data error:", error);
-      window.location.href = "/auth";
-    }
-  };
 
   if (loading) {
     return (
@@ -213,21 +185,6 @@ const Profile = () => {
           <CardContent className="flex items-center gap-3 py-4">
             <LogOut className="h-5 w-5 text-destructive" />
             <p className="font-medium text-destructive">Logout</p>
-          </CardContent>
-        </Card>
-
-        <Card className="border-destructive/30">
-          <CardContent className="py-4">
-            <Button 
-              variant="destructive" 
-              onClick={handleClearAppData}
-              className="w-full"
-            >
-              🗑️ Clear App Data & Reset
-            </Button>
-            <p className="text-xs text-muted-foreground mt-2 text-center">
-              Use this if the app is not working properly
-            </p>
           </CardContent>
         </Card>
       </div>

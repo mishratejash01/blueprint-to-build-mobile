@@ -29,37 +29,79 @@ const Auth = () => {
 
   const [isRedirecting, setIsRedirecting] = useState(false);
 
-  // Simplified auth state management - prevent race conditions
+  // Simplified auth state management with retry logic - prevent race conditions
   useEffect(() => {
     let mounted = true;
+    let timeoutId: NodeJS.Timeout;
     
     const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!mounted || !session) return;
-      
-      setIsRedirecting(true);
-      
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", session.user.id)
-        .single();
-      
-      if (!mounted) return;
-      
-      // Use window.location for guaranteed navigation
-      const path = profile?.role === "store_manager" ? "/store/dashboard" 
-        : profile?.role === "partner" ? "/partner/dashboard" 
-        : "/home";
-      
-      window.location.href = path;
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!mounted || !session) return;
+        
+        console.log("✅ Session found, fetching profile...");
+        setIsRedirecting(true);
+        
+        // Fetch profile with retry logic
+        let profile = null;
+        let attempts = 0;
+        const maxAttempts = 3;
+        
+        while (!profile && attempts < maxAttempts && mounted) {
+          const { data, error } = await supabase
+            .from("profiles")
+            .select("role")
+            .eq("id", session.user.id)
+            .single();
+          
+          if (data) {
+            profile = data;
+            console.log("✅ Profile fetched:", profile.role);
+          } else {
+            console.warn(`⚠️ Profile fetch attempt ${attempts + 1} failed:`, error);
+            attempts++;
+            await new Promise(resolve => setTimeout(resolve, 500));
+          }
+        }
+        
+        if (!mounted) return;
+        
+        // Determine redirect path
+        let path = "/home";
+        
+        if (profile?.role === "store_manager") {
+          path = "/store/dashboard";
+        } else if (profile?.role === "partner") {
+          path = "/partner/dashboard";
+        }
+        
+        console.log(`🚀 Redirecting to: ${path}`);
+        window.location.href = path;
+        
+      } catch (error) {
+        console.error("❌ Auth check error:", error);
+        if (mounted) {
+          setIsRedirecting(false);
+        }
+      }
     };
+    
+    // Set timeout to force redirect if stuck (max 5 seconds)
+    timeoutId = setTimeout(() => {
+      if (isRedirecting && mounted) {
+        console.warn("⚠️ Redirect timeout - forcing navigation");
+        window.location.href = "/home";
+      }
+    }, 5000);
     
     checkAuth();
     
-    return () => { mounted = false; };
-  }, []);
+    return () => { 
+      mounted = false;
+      clearTimeout(timeoutId);
+    };
+  }, [isRedirecting]);
 
 
   // --- handleSignUp remains the same ---

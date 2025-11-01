@@ -210,7 +210,15 @@ const Checkout = () => {
       });
 
       clearCart();
-      navigate(`/order-confirmation/${order.id}`);
+      
+      toast({
+        title: "Order placed successfully!",
+        description: `Order #${order.id.slice(0, 8)} is being prepared`
+      });
+      
+      setTimeout(() => {
+        navigate(`/order-confirmation/${order.id}`);
+      }, 100);
 
     } catch (error: any) {
       toast({
