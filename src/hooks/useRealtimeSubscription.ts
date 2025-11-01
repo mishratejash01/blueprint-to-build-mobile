@@ -15,49 +15,38 @@ export const useRealtimeSubscription = (
 ) => {
   useEffect(() => {
     let mounted = true;
-    let channel: any = null;
     
-    const setupChannel = async () => {
-      // CRITICAL FIX: Remove any existing channel with same name FIRST
-      const existingChannel = supabase.channel(channelName);
-      await supabase.removeChannel(existingChannel);
-      
-      channel = supabase
-        .channel(channelName)
-        .on(
-          'postgres_changes' as any,
-          {
-            event: config.event,
-            schema: 'public',
-            table: config.table,
-            filter: config.filter
-          } as any,
-          (payload: RealtimePostgresChangesPayload<any>) => {
-            if (mounted) {
-              config.callback(payload);
-            }
+    const channel = supabase
+      .channel(channelName)
+      .on(
+        'postgres_changes' as any,
+        {
+          event: config.event,
+          schema: 'public',
+          table: config.table,
+          filter: config.filter
+        } as any,
+        (payload: RealtimePostgresChangesPayload<any>) => {
+          if (mounted) {
+            config.callback(payload);
           }
-        )
-        .subscribe((status) => {
-          if (status === 'SUBSCRIBED') {
-            console.log(`✅ ${channelName} subscribed`);
-          } else if (status === 'CHANNEL_ERROR') {
-            console.error(`❌ ${channelName} error`);
-          }
-        });
-    };
-    
-    setupChannel();
-    
+        }
+      )
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          console.log(`✅ Subscribed to ${channelName}`);
+        } else if (status === 'CHANNEL_ERROR') {
+          console.error(`❌ Error subscribing to ${channelName}`);
+        }
+      });
+
     return () => {
       mounted = false;
-      if (channel) {
-        supabase.removeChannel(channel).then(() => {
-          console.log(`🔌 ${channelName} unsubscribed`);
-        }).catch((err) => {
-          console.error(`Failed to cleanup ${channelName}:`, err);
-        });
-      }
+      supabase.removeChannel(channel).then(() => {
+        console.log(`🔌 Unsubscribed from ${channelName}`);
+      }).catch((err) => {
+        console.error(`Failed to unsubscribe from ${channelName}:`, err);
+      });
     };
   }, [channelName, config.table, config.event, config.filter]);
 };

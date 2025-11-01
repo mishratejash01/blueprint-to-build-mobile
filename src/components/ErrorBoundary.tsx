@@ -6,7 +6,6 @@ import { AlertCircle } from "lucide-react";
 interface ErrorBoundaryState {
   hasError: boolean;
   error: Error | null;
-  errorCount: number;
 }
 
 class ErrorBoundary extends React.Component<
@@ -15,67 +14,44 @@ class ErrorBoundary extends React.Component<
 > {
   constructor(props: { children: React.ReactNode }) {
     super(props);
-    this.state = { hasError: false, error: null, errorCount: 0 };
+    this.state = { hasError: false, error: null };
   }
 
   static getDerivedStateFromError(error: Error): ErrorBoundaryState {
-    return { hasError: true, error, errorCount: 0 };
+    return { hasError: true, error };
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error("🔥 App Error:", error, errorInfo);
-    
-    // Track error count
-    this.setState((prev: any) => ({ 
-      errorCount: prev.errorCount + 1 
-    }));
-    
-    // If too many errors, force reset
-    if (this.state.errorCount > 3) {
-      localStorage.clear();
-      sessionStorage.clear();
-      window.location.href = "/auth";
-    }
+    console.error("App crashed:", error, errorInfo);
   }
-
-  handleReset = () => {
-    // Clear caches and reload
-    sessionStorage.clear();
-    this.setState({ hasError: false, error: null, errorCount: 0 });
-    window.location.reload();
-  };
 
   render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen flex items-center justify-center p-4 bg-muted">
-          <Card className="max-w-md p-6 text-center">
-            <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center mx-auto mb-4">
+        <div className="min-h-screen flex items-center justify-center p-4 bg-background">
+          <Card className="max-w-md p-6 text-center space-y-4">
+            <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center mx-auto">
               <AlertCircle className="w-8 h-8 text-destructive" />
             </div>
-            <h2 className="text-xl font-bold mb-4 text-destructive">
-              Something went wrong
-            </h2>
-            <p className="text-muted-foreground mb-6">
-              {this.state.error?.message || "An unexpected error occurred"}
+            <h2 className="text-xl font-bold">Something went wrong</h2>
+            <p className="text-muted-foreground">
+              The app encountered an unexpected error. Please refresh the page to continue.
             </p>
             <div className="space-y-2">
-              <Button onClick={this.handleReset} className="w-full">
-                🔄 Reload App
+              <Button onClick={() => window.location.reload()} className="w-full">
+                Refresh Page
               </Button>
               <Button 
                 variant="outline" 
-                onClick={() => window.location.href = "/auth"}
+                onClick={() => {
+                  this.setState({ hasError: false, error: null });
+                  window.location.href = '/home';
+                }}
                 className="w-full"
               >
-                ← Back to Login
+                Go to Home
               </Button>
             </div>
-            {this.state.errorCount > 2 && (
-              <p className="text-xs text-destructive mt-4">
-                Multiple errors detected. Consider clearing app data from your profile.
-              </p>
-            )}
           </Card>
         </div>
       );

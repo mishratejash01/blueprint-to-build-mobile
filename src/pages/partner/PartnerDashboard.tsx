@@ -13,177 +13,72 @@ const PartnerDashboard = () => {
   const { toast } = useToast();
   const [isAvailable, setIsAvailable] = useState(false);
   const [stats, setStats] = useState({ available: 0, completed: 0 });
-  const [isTogglingAvailability, setIsTogglingAvailability] = useState(false);
-  const [isLoadingData, setIsLoadingData] = useState(true);
 
   useEffect(() => {
     fetchPartnerData();
-    
-    // Safety net: Force loading to false after 5 seconds
-    const timeout = setTimeout(() => {
-      if (isLoadingData) {
-        console.warn("⚠️ Force-clearing loading state after timeout");
-        setIsLoadingData(false);
-      }
-    }, 5000);
-    
-    return () => clearTimeout(timeout);
   }, []);
 
   const fetchPartnerData = async () => {
-    try {
-      setIsLoadingData(true);
-      console.log("🔄 Fetching partner data...");
-      
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        console.error("❌ No user found");
-        return;
-      }
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
 
-      // Get partner availability from new dedicated column (optimized)
-      const { data: profile, error: profileError } = await supabase
-        .from("profiles")
-        .select("is_available")
-        .eq("id", user.id)
-        .single();
+    // Get partner availability from new dedicated column (optimized)
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("is_available")
+      .eq("id", user.id)
+      .single();
 
-      if (profileError) {
-        console.error("❌ Profile fetch error:", profileError);
-        throw profileError;
-      }
+    setIsAvailable(profile?.is_available || false);
 
-      setIsAvailable(profile?.is_available || false);
-      console.log("✅ Profile loaded. Available:", profile?.is_available);
+    // Get available orders count
+    const { count: availableCount } = await (supabase as any)
+      .from("orders")
+      .select("*", { count: "exact", head: true })
+      .eq("status", "ready_for_pickup")
+      .is("delivery_partner_id", null);
 
-      // Get available orders count
-      const { count: availableCount, error: availableError } = await (supabase as any)
-        .from("orders")
-        .select("*", { count: "exact", head: true })
-        .eq("status", "ready_for_pickup")
-        .is("delivery_partner_id", null);
+    // Get completed deliveries count
+    const { count: completedCount } = await (supabase as any)
+      .from("orders")
+      .select("*", { count: "exact", head: true })
+      .eq("delivery_partner_id", user.id)
+      .eq("status", "delivered");
 
-      if (availableError) {
-        console.error("❌ Available orders error:", availableError);
-      }
-
-      // Get completed deliveries count
-      const { count: completedCount, error: completedError } = await (supabase as any)
-        .from("orders")
-        .select("*", { count: "exact", head: true })
-        .eq("delivery_partner_id", user.id)
-        .eq("status", "delivered");
-
-      if (completedError) {
-        console.error("❌ Completed orders error:", completedError);
-      }
-
-      setStats({
-        available: availableCount || 0,
-        completed: completedCount || 0
-      });
-      
-      console.log("✅ Data fetch complete. Stats:", { availableCount, completedCount });
-    } catch (error) {
-      console.error("❌ Fatal error in fetchPartnerData:", error);
-      toast({
-        title: "Failed to load data",
-        description: "Please refresh the page",
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoadingData(false);
-      console.log("✅ Loading state cleared");
-    }
+    setStats({
+      available: availableCount || 0,
+      completed: completedCount || 0
+    });
   };
 
   const handleToggleAvailability = async (checked: boolean) => {
-    if (isTogglingAvailability) return; // Prevent double-clicks
-    
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      console.error("❌ No user found");
-      toast({
-        title: "Error",
-        description: "You must be logged in to change availability",
-        variant: "destructive"
-      });
-      return;
-    }
+    if (!user) return;
 
-    setIsTogglingAvailability(true);
-    console.log("🔄 Toggling availability to:", checked);
-    
-    // Haptic feedback for mobile devices
-    if ('vibrate' in navigator) {
-      navigator.vibrate(50);
-    }
-
-    // Update UI immediately for instant feedback
-    setIsAvailable(checked);
-
+    // Update availability in dedicated column (optimized)
     const { error } = await supabase
       .from("profiles")
       .update({ is_available: checked })
       .eq("id", user.id);
 
     if (error) {
-      console.error("❌ Toggle failed:", error);
-      // Revert UI on error
-      setIsAvailable(!checked);
       toast({
-        title: "❌ Failed to update",
+        title: "Error",
         description: error.message,
         variant: "destructive"
       });
     } else {
-      console.log("✅ Toggle successful");
-      
-      // Refetch data to sync stats
-      await fetchPartnerData();
-      
+      setIsAvailable(checked);
       toast({
-        title: checked ? "🟢 You're now online!" : "⚫ You're now offline",
+        title: checked ? "You're now online" : "You're now offline",
         description: checked ? "You'll receive delivery requests" : "You won't receive new requests"
       });
     }
-    
-    setIsTogglingAvailability(false);
   };
 
   const handleLogout = async () => {
-    try {
-      // 1. Close all Supabase channels FIRST
-      await supabase.removeAllChannels();
-      
-      // 2. Clear all local caches
-      sessionStorage.clear();
-      
-      // 3. Clear specific localStorage items (keep auth tokens for proper signout)
-      const keysToRemove = [];
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key && !key.startsWith('sb-')) {
-          keysToRemove.push(key);
-        }
-      }
-      keysToRemove.forEach(key => localStorage.removeItem(key));
-      
-      // 4. Sign out from Supabase (this clears auth tokens)
-      await supabase.auth.signOut();
-      
-      // 5. Force navigation with replace
-      navigate("/auth?type=partner", { replace: true });
-      
-      // 6. Force reload to ensure clean state
-      setTimeout(() => {
-        window.location.href = "/auth?type=partner";
-      }, 100);
-    } catch (error) {
-      console.error("Logout error:", error);
-      // Force reload anyway
-      window.location.href = "/auth?type=partner";
-    }
+    await supabase.auth.signOut();
+    navigate("/auth?type=partner");
   };
 
   return (
@@ -203,27 +98,15 @@ const PartnerDashboard = () => {
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="font-semibold text-lg">Availability</h3>
-                {isLoadingData ? (
-                  <p className="text-sm text-muted-foreground animate-pulse">
-                    Loading status...
-                  </p>
-                ) : (
-                  <p className="text-sm text-muted-foreground">
-                    {isAvailable ? "🟢 You're online" : "⚫ You're offline"}
-                  </p>
-                )}
+                <p className="text-sm text-muted-foreground">
+                  {isAvailable ? "You're online" : "You're offline"}
+                </p>
               </div>
               <Switch
                 checked={isAvailable}
                 onCheckedChange={handleToggleAvailability}
-                disabled={isTogglingAvailability}
               />
             </div>
-            {isTogglingAvailability && (
-              <p className="text-xs text-muted-foreground mt-2 animate-pulse">
-                Updating...
-              </p>
-            )}
           </Card>
 
           <div className="grid grid-cols-2 gap-4">

@@ -27,89 +27,53 @@ const Auth = () => {
   const [searchParams] = useSearchParams();
   const userType = searchParams.get("type") || "customer";
 
-  const [isRedirecting, setIsRedirecting] = useState(false);
-
-  // FIXED: Only redirect if session exists, listen for login events
+  // Consolidated auth state management - single source of truth
   useEffect(() => {
     let mounted = true;
-    
-    const checkAuth = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        // CRITICAL: Only proceed if session exists
+
+    // Set up auth state listener ONCE
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
         if (!mounted) return;
         
-        if (!session) {
-          // No session = user needs to login, DON'T interfere
-          setIsRedirecting(false);
-          return;
-        }
+        setSession(session);
         
-        // Session exists, proceed with redirect
-        console.log("✅ Session found, fetching profile...");
-        setIsRedirecting(true);
-        
-        // Fetch profile with retry logic
-        let profile = null;
-        let attempts = 0;
-        const maxAttempts = 3;
-        
-        while (!profile && attempts < maxAttempts && mounted) {
-          const { data, error } = await supabase
+        if (session) {
+          // Fetch actual user role from database
+          const { data: profile } = await supabase
             .from("profiles")
             .select("role")
             .eq("id", session.user.id)
             .single();
-          
-          if (data) {
-            profile = data;
-            console.log("✅ Profile fetched:", profile.role);
+
+          if (!mounted) return;
+
+          // Single redirect based on actual role
+          if (profile?.role === "store_manager") {
+            navigate("/store/dashboard", { replace: true });
+          } else if (profile?.role === "partner") {
+            navigate("/partner/dashboard", { replace: true });
           } else {
-            console.warn(`⚠️ Profile fetch attempt ${attempts + 1} failed:`, error);
-            attempts++;
-            await new Promise(resolve => setTimeout(resolve, 500));
+            navigate("/home", { replace: true });
           }
         }
-        
-        if (!mounted) return;
-        
-        // Determine redirect path
-        let path = "/home";
-        
-        if (profile?.role === "store_manager") {
-          path = "/store/dashboard";
-        } else if (profile?.role === "partner") {
-          path = "/partner/dashboard";
-        }
-        
-        console.log(`🚀 Redirecting to: ${path}`);
-        window.location.href = path;
-        
-      } catch (error) {
-        console.error("❌ Auth check error:", error);
-        if (mounted) {
-          setIsRedirecting(false);
-        }
       }
-    };
-    
-    checkAuth();
-    
-    // Listen for successful login events
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_IN' && session && mounted) {
-        console.log("🔐 User just signed in, redirecting...");
-        setIsRedirecting(true);
-        checkAuth();
+    );
+
+    // Check initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!mounted) return;
+      if (session) {
+        setSession(session);
+        // Trigger auth state change handler for initial session
       }
     });
-    
-    return () => { 
+
+    return () => {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, []);
+  }, [navigate]);
 
 
   // --- handleSignUp remains the same ---
@@ -119,8 +83,7 @@ const Auth = () => {
 
     const redirectUrl = `${window.location.origin}/auth?type=${userType}`;
 
-    // ### THIS IS THE FIX ###
-    const role = userType === "store" ? "store_manager" : userType === "partner" ? "partner" : "customer";
+    const role = userType === "store" ? "store_manager" : userType === "partner" ? "delivery_partner" : "customer";
 
     const { error } = await supabase.auth.signUp({
       email,
@@ -175,8 +138,7 @@ const Auth = () => {
   // --- NEW: Handle Google Sign In ---
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
-    // ### THIS IS THE FIX ###
-    const role = userType === "store" ? "store_manager" : userType === "partner" ? "partner" : "customer";
+    const role = userType === "store" ? "store_manager" : userType === "partner" ? "delivery_partner" : "customer";
     const redirectUrl = `${window.location.origin}/auth?type=${userType}`;
 
     const { error } = await supabase.auth.signInWithOAuth({
@@ -213,15 +175,6 @@ const Auth = () => {
     if (userType === "partner") return "Delivery Partner";
     return "Customer";
   };
-
-  // Prevent rendering if redirecting
-  if (isRedirecting) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-subtle p-4">

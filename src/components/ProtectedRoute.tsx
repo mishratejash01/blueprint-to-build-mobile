@@ -118,20 +118,21 @@ const ProtectedRoute = ({ children, requireAuth = true, allowedRoles }: Protecte
     };
   }, [allowedRoles]);
 
-  // If timeout reached, redirect immediately (don't block)
+  // If timeout reached and no session, show error
   if (loadingTimeout && !session && requireAuth) {
-    window.location.href = "/auth";
-    return null;
+    toast({
+      title: "Connection Issue",
+      description: "Please check your connection and try again",
+      variant: "destructive"
+    });
+    return <Navigate to="/auth" replace />;
   }
 
-  // Simple loading screen without blocking overlay
+  // Show loading only for a short time
   if (loading || !roleChecked) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Verifying access...</p>
-        </div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>
     );
   }

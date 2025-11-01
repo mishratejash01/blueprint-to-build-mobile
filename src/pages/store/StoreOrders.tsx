@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -6,12 +6,11 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, User, Phone, MapPin, Package, Clock, RefreshCw } from "lucide-react";
+import { ArrowLeft, User, Phone, MapPin, Package, Clock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { playOrderSound, showNotification, requestNotificationPermission } from "@/utils/notifications";
-import { useVisibilityRefetch } from "@/hooks/useVisibilityRefetch";
 
 const StoreOrders = () => {
   const navigate = useNavigate();
@@ -20,9 +19,91 @@ const StoreOrders = () => {
   const [pickupOtps, setPickupOtps] = useState<Record<string, any>>({});
   const [activeFilter, setActiveFilter] = useState<string>(searchParams.get("filter") || "all");
   const [otpTimeLeft, setOtpTimeLeft] = useState<Record<string, number>>({});
-  const [refreshing, setRefreshing] = useState(false);
 
-  const fetchOrders = useCallback(async () => {
+  useEffect(() => {
+    requestNotificationPermission();
+    fetchOrders();
+    subscribeToUpdates();
+
+    return () => {
+      supabase.removeAllChannels();
+    };
+  }, []);
+
+  // OTP countdown timer
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const newTimes: Record<string, number> = {};
+      Object.entries(pickupOtps).forEach(([orderId, otp]) => {
+        const expiry = new Date(otp.expires_at);
+        const now = new Date();
+        const diff = Math.floor((expiry.getTime() - now.getTime()) / 1000);
+        newTimes[orderId] = Math.max(0, diff);
+      });
+      setOtpTimeLeft(newTimes);
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [pickupOtps]);
+
+  useEffect(() => {
+    const filter = searchParams.get("filter");
+    if (filter) {
+      setActiveFilter(filter);
+    }
+  }, [searchParams]);
+
+  const subscribeToUpdates = () => {
+    // Subscribe to new orders
+    supabase
+      .channel("store-orders")
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "orders"
+        },
+        (payload) => {
+          playOrderSound();
+          showNotification(
+            "New Order! 🎉",
+            `Order #${payload.new.id.slice(0, 8)} - ₹${payload.new.total}`
+          );
+          fetchOrders();
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "orders"
+        },
+        () => {
+          fetchOrders();
+        }
+      )
+      .subscribe();
+
+    // Subscribe to OTP generation
+    supabase
+      .channel("pickup-otps")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "store_pickup_otps"
+        },
+        () => {
+          fetchPickupOtps();
+        }
+      )
+      .subscribe();
+  };
+
+  const fetchOrders = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
@@ -68,7 +149,7 @@ const StoreOrders = () => {
     } catch (error) {
       console.error("Error fetching orders:", error);
     }
-  }, []);
+  };
 
   const fetchPickupOtps = async () => {
     try {
@@ -87,96 +168,6 @@ const StoreOrders = () => {
     } catch (error) {
       console.error("Error fetching OTPs:", error);
     }
-  };
-
-  useEffect(() => {
-    requestNotificationPermission();
-    fetchOrders();
-    subscribeToUpdates();
-
-    return () => {
-      supabase.removeAllChannels();
-    };
-  }, [fetchOrders]);
-
-  // Automatically refetch when tab becomes visible
-  useVisibilityRefetch(fetchOrders);
-
-  // OTP countdown timer
-  useEffect(() => {
-    const timer = setInterval(() => {
-      const newTimes: Record<string, number> = {};
-      Object.entries(pickupOtps).forEach(([orderId, otp]) => {
-        const expiry = new Date(otp.expires_at);
-        const now = new Date();
-        const diff = Math.floor((expiry.getTime() - now.getTime()) / 1000);
-        newTimes[orderId] = Math.max(0, diff);
-      });
-      setOtpTimeLeft(newTimes);
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [pickupOtps]);
-
-  useEffect(() => {
-    const filter = searchParams.get("filter");
-    if (filter) {
-      setActiveFilter(filter);
-    }
-  }, [searchParams]);
-
-  const subscribeToUpdates = () => {
-    // Subscribe to order changes including deletes
-    supabase
-      .channel("store-orders")
-      .on(
-        "postgres_changes",
-        {
-          event: "*", // Listen to ALL events including DELETE
-          schema: "public",
-          table: "orders"
-        },
-        (payload) => {
-          console.log("Order event:", payload);
-          
-          if (payload.eventType === 'DELETE') {
-            // Remove deleted order from state immediately
-            setOrders(prev => prev.filter(o => o.id !== payload.old.id));
-            
-            // Remove associated OTP
-            setPickupOtps(prev => {
-              const updated = { ...prev };
-              delete updated[payload.old.id];
-              return updated;
-            });
-          } else if (payload.eventType === 'INSERT') {
-            playOrderSound();
-            showNotification(
-              "New Order! 🎉",
-              `Order #${payload.new.id.slice(0, 8)} - ₹${payload.new.total}`
-            );
-          }
-          
-          fetchOrders();
-        }
-      )
-      .subscribe();
-
-    // Subscribe to OTP generation
-    supabase
-      .channel("pickup-otps")
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "store_pickup_otps"
-        },
-        () => {
-          fetchPickupOtps();
-        }
-      )
-      .subscribe();
   };
 
   const handleMarkReady = async (orderId: string) => {
@@ -202,13 +193,6 @@ const StoreOrders = () => {
     if (handedOver) {
       toast.success("Marked as handed over. Waiting for partner to verify OTP.");
     }
-  };
-
-  const handleRefresh = async () => {
-    setRefreshing(true);
-    await fetchOrders();
-    setRefreshing(false);
-    toast.success("Orders refreshed");
   };
 
   const getStatusColor = (status: string) => {
@@ -251,15 +235,7 @@ const StoreOrders = () => {
             <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
               <ArrowLeft />
             </Button>
-            <h1 className="text-xl font-bold flex-1">Orders</h1>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={handleRefresh}
-              disabled={refreshing}
-            >
-              <RefreshCw className={`h-5 w-5 ${refreshing ? 'animate-spin' : ''}`} />
-            </Button>
+            <h1 className="text-xl font-bold">Orders</h1>
           </div>
           
           <Tabs value={activeFilter} onValueChange={setActiveFilter} className="w-full">

@@ -1,38 +1,53 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, MapPin, Navigation, RefreshCw } from "lucide-react";
+import { ArrowLeft, MapPin, Navigation } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { playOrderSound } from "@/utils/notifications";
-import { useVisibilityRefetch } from "@/hooks/useVisibilityRefetch";
-import { toast as sonnerToast } from "sonner";
 
 const PartnerOrders = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [availableOrders, setAvailableOrders] = useState<any[]>([]);
   const [activeOrder, setActiveOrder] = useState<any>(null);
-  const [refreshing, setRefreshing] = useState(false);
 
-  const fetchOrders = useCallback(async () => {
-    console.log("🔍 [PartnerOrders] Starting fetchOrders...");
-    
+  useEffect(() => {
+    fetchOrders();
+
+    // Subscribe to real-time order changes
+    const channel = supabase
+      .channel("partner-orders")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "orders"
+        },
+        (payload) => {
+          console.log("Order changed:", payload);
+          if (payload.eventType === "INSERT" && payload.new.status === "ready_for_pickup") {
+            playOrderSound();
+          }
+          fetchOrders();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  const fetchOrders = async () => {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      console.error("❌ No user found when fetching orders");
-      toast({
-        title: "Authentication Error",
-        description: "Please log in again",
-        variant: "destructive",
-      });
-      return;
-    }
+    if (!user) return;
 
-    console.log("✅ User authenticated:", user.id);
+    console.log("Fetching orders for user:", user.id);
 
     // Get available orders
     const { data: available, error: availableError } = await supabase
@@ -42,50 +57,25 @@ const PartnerOrders = () => {
       .is("delivery_partner_id", null)
       .order("created_at", { ascending: false });
 
-    console.log("📦 Available orders query result:", { 
-      count: available?.length || 0,
-      data: available,
-      error: availableError 
-    });
+    console.log("Available orders query result:", { available, availableError });
     
-    if (availableError) {
-      console.error("❌ RLS Policy Error:", availableError);
-      toast({
-        title: "Access Error",
-        description: `Unable to fetch orders: ${availableError.message}`,
-        variant: "destructive",
-      });
-      setAvailableOrders([]);
-      return;
-    }
-    
-    if (!available || available.length === 0) {
-      console.log("📭 No available orders found");
-      setAvailableOrders([]);
-    } else {
-      console.log(`📦 Found ${available.length} available orders`);
-      
+    if (available && available.length > 0) {
       const storeIds = [...new Set(available.map(o => o.store_id))];
-      console.log("🏪 Fetching stores:", storeIds);
-      
-      const { data: stores, error: storesError } = await supabase
+      const { data: stores } = await supabase
         .from("stores")
         .select("*")
         .in("id", storeIds);
-
-      if (storesError) {
-        console.error("❌ Stores fetch error:", storesError);
-      }
       
-      console.log("🏪 Stores data:", stores);
-
+      console.log("Stores data:", stores);
+      
       const ordersWithStores = available.map(order => ({
         ...order,
         stores: stores?.find(s => s.id === order.store_id)
       }));
-
-      console.log("✅ Orders with stores:", ordersWithStores);
+      
       setAvailableOrders(ordersWithStores);
+    } else {
+      setAvailableOrders([]);
     }
 
     // Get active orders (can be multiple if partner hasn't completed previous ones)
@@ -121,67 +111,15 @@ const PartnerOrders = () => {
     } else {
       setActiveOrder(null);
     }
-  }, []);
-
-  useEffect(() => {
-    fetchOrders();
-
-    // Subscribe to real-time order changes including deletes
-    const channel = supabase
-      .channel("partner-orders")
-      .on(
-        "postgres_changes",
-        {
-          event: "*", // Listen to ALL events including DELETE
-          schema: "public",
-          table: "orders"
-        },
-        (payload) => {
-          console.log("Order changed:", payload);
-          
-          if (payload.eventType === 'DELETE') {
-            // Remove from available orders immediately
-            setAvailableOrders(prev => prev.filter(o => o.id !== payload.old.id));
-            
-            // Clear active order if it was deleted
-            if (activeOrder?.id === payload.old.id) {
-              setActiveOrder(null);
-            }
-          } else if (payload.eventType === "INSERT" && payload.new.status === "ready_for_pickup") {
-            playOrderSound();
-          }
-          
-          // Always refetch for data consistency
-          fetchOrders();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [fetchOrders, activeOrder]);
-
-  // Automatically refetch when tab becomes visible
-  useVisibilityRefetch(fetchOrders);
-
-  const handleRefresh = async () => {
-    setRefreshing(true);
-    await fetchOrders();
-    setRefreshing(false);
-    sonnerToast.success("Orders refreshed");
   };
 
   const handleAcceptOrder = async (orderId: string) => {
     try {
-      sonnerToast.loading("Accepting order...");
-      
       const { data, error } = await supabase.rpc('accept_order', {
         order_id_to_accept: orderId
       });
 
       if (error) {
-        sonnerToast.dismiss();
         toast({
           title: "Order unavailable",
           description: error.message || "Sorry, this order was just taken by another partner",
@@ -190,8 +128,6 @@ const PartnerOrders = () => {
         fetchOrders();
         return;
       }
-      
-      sonnerToast.dismiss();
 
       // Generate OTP for pickup verification
       const { data: otpData, error: otpError } = await supabase.functions.invoke('generate-pickup-otp', {
@@ -239,15 +175,7 @@ const PartnerOrders = () => {
             <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
               <ArrowLeft />
             </Button>
-            <h1 className="text-xl font-bold flex-1">Available Orders</h1>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={handleRefresh}
-              disabled={refreshing}
-            >
-              <RefreshCw className={`h-5 w-5 ${refreshing ? 'animate-spin' : ''}`} />
-            </Button>
+            <h1 className="text-xl font-bold">Available Orders</h1>
           </div>
         </div>
 
