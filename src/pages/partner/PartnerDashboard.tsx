@@ -18,43 +18,82 @@ const PartnerDashboard = () => {
 
   useEffect(() => {
     fetchPartnerData();
+    
+    // Safety net: Force loading to false after 5 seconds
+    const timeout = setTimeout(() => {
+      if (isLoadingData) {
+        console.warn("⚠️ Force-clearing loading state after timeout");
+        setIsLoadingData(false);
+      }
+    }, 5000);
+    
+    return () => clearTimeout(timeout);
   }, []);
 
   const fetchPartnerData = async () => {
     try {
       setIsLoadingData(true);
+      console.log("🔄 Fetching partner data...");
+      
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) {
+        console.error("❌ No user found");
+        return;
+      }
 
       // Get partner availability from new dedicated column (optimized)
-      const { data: profile } = await supabase
+      const { data: profile, error: profileError } = await supabase
         .from("profiles")
         .select("is_available")
         .eq("id", user.id)
         .single();
 
+      if (profileError) {
+        console.error("❌ Profile fetch error:", profileError);
+        throw profileError;
+      }
+
       setIsAvailable(profile?.is_available || false);
+      console.log("✅ Profile loaded. Available:", profile?.is_available);
 
       // Get available orders count
-      const { count: availableCount } = await (supabase as any)
+      const { count: availableCount, error: availableError } = await (supabase as any)
         .from("orders")
         .select("*", { count: "exact", head: true })
         .eq("status", "ready_for_pickup")
         .is("delivery_partner_id", null);
 
+      if (availableError) {
+        console.error("❌ Available orders error:", availableError);
+      }
+
       // Get completed deliveries count
-      const { count: completedCount } = await (supabase as any)
+      const { count: completedCount, error: completedError } = await (supabase as any)
         .from("orders")
         .select("*", { count: "exact", head: true })
         .eq("delivery_partner_id", user.id)
         .eq("status", "delivered");
 
+      if (completedError) {
+        console.error("❌ Completed orders error:", completedError);
+      }
+
       setStats({
         available: availableCount || 0,
         completed: completedCount || 0
       });
+      
+      console.log("✅ Data fetch complete. Stats:", { availableCount, completedCount });
+    } catch (error) {
+      console.error("❌ Fatal error in fetchPartnerData:", error);
+      toast({
+        title: "Failed to load data",
+        description: "Please refresh the page",
+        variant: "destructive"
+      });
     } finally {
       setIsLoadingData(false);
+      console.log("✅ Loading state cleared");
     }
   };
 
@@ -164,14 +203,20 @@ const PartnerDashboard = () => {
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="font-semibold text-lg">Availability</h3>
-                <p className="text-sm text-muted-foreground">
-                  {isAvailable ? "🟢 You're online" : "⚫ You're offline"}
-                </p>
+                {isLoadingData ? (
+                  <p className="text-sm text-muted-foreground animate-pulse">
+                    Loading status...
+                  </p>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    {isAvailable ? "🟢 You're online" : "⚫ You're offline"}
+                  </p>
+                )}
               </div>
               <Switch
                 checked={isAvailable}
                 onCheckedChange={handleToggleAvailability}
-                disabled={isTogglingAvailability || isLoadingData}
+                disabled={isTogglingAvailability}
               />
             </div>
             {isTogglingAvailability && (

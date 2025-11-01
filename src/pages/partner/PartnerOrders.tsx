@@ -19,13 +19,20 @@ const PartnerOrders = () => {
   const [refreshing, setRefreshing] = useState(false);
 
   const fetchOrders = useCallback(async () => {
+    console.log("🔍 [PartnerOrders] Starting fetchOrders...");
+    
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       console.error("❌ No user found when fetching orders");
+      toast({
+        title: "Authentication Error",
+        description: "Please log in again",
+        variant: "destructive",
+      });
       return;
     }
 
-    console.log("🔍 Fetching orders for partner:", user.id);
+    console.log("✅ User authenticated:", user.id);
 
     // Get available orders
     const { data: available, error: availableError } = await supabase
@@ -35,35 +42,50 @@ const PartnerOrders = () => {
       .is("delivery_partner_id", null)
       .order("created_at", { ascending: false });
 
-    console.log("📦 Available orders query result:", { available, availableError });
+    console.log("📦 Available orders query result:", { 
+      count: available?.length || 0,
+      data: available,
+      error: availableError 
+    });
     
     if (availableError) {
       console.error("❌ RLS Policy Error:", availableError);
       toast({
         title: "Access Error",
-        description: "Unable to fetch orders. Please check your partner status.",
-        variant: "destructive"
+        description: `Unable to fetch orders: ${availableError.message}`,
+        variant: "destructive",
       });
+      setAvailableOrders([]);
       return;
     }
     
-    if (available && available.length > 0) {
+    if (!available || available.length === 0) {
+      console.log("📭 No available orders found");
+      setAvailableOrders([]);
+    } else {
+      console.log(`📦 Found ${available.length} available orders`);
+      
       const storeIds = [...new Set(available.map(o => o.store_id))];
-      const { data: stores } = await supabase
+      console.log("🏪 Fetching stores:", storeIds);
+      
+      const { data: stores, error: storesError } = await supabase
         .from("stores")
         .select("*")
         .in("id", storeIds);
+
+      if (storesError) {
+        console.error("❌ Stores fetch error:", storesError);
+      }
       
-      console.log("Stores data:", stores);
-      
+      console.log("🏪 Stores data:", stores);
+
       const ordersWithStores = available.map(order => ({
         ...order,
         stores: stores?.find(s => s.id === order.store_id)
       }));
-      
+
+      console.log("✅ Orders with stores:", ordersWithStores);
       setAvailableOrders(ordersWithStores);
-    } else {
-      setAvailableOrders([]);
     }
 
     // Get active orders (can be multiple if partner hasn't completed previous ones)
