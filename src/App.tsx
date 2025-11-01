@@ -34,17 +34,22 @@ import ActiveDelivery from "./pages/partner/ActiveDelivery";
 import PickupVerify from "./pages/partner/PickupVerify";
 import NotFound from "./pages/NotFound";
 
-// Configure React Query with smart defaults
+// Configure React Query with optimized cache-busting settings
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: 2, // Retry failed queries twice
-      staleTime: 30000, // Cache data for 30 seconds
-      refetchOnWindowFocus: false, // Don't refetch on tab focus
+      staleTime: 10000, // Data considered fresh for only 10 seconds
+      gcTime: 5 * 60 * 1000, // Cache for 5 minutes
+      refetchOnWindowFocus: true, // CRITICAL: Refetch when user returns to tab
       refetchOnReconnect: true, // Refetch on reconnect
     },
     mutations: {
       retry: 1,
+      onSuccess: () => {
+        // Invalidate orders cache after any mutation
+        queryClient.invalidateQueries({ queryKey: ['orders'] });
+      },
       onError: (error: any) => {
         console.error("Mutation error:", error);
         // Only show toast for critical errors

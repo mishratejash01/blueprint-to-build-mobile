@@ -1,49 +1,24 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, MapPin, Navigation } from "lucide-react";
+import { ArrowLeft, MapPin, Navigation, RefreshCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { playOrderSound } from "@/utils/notifications";
+import { useVisibilityRefetch } from "@/hooks/useVisibilityRefetch";
+import { toast as sonnerToast } from "sonner";
 
 const PartnerOrders = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [availableOrders, setAvailableOrders] = useState<any[]>([]);
   const [activeOrder, setActiveOrder] = useState<any>(null);
+  const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    fetchOrders();
-
-    // Subscribe to real-time order changes
-    const channel = supabase
-      .channel("partner-orders")
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "orders"
-        },
-        (payload) => {
-          console.log("Order changed:", payload);
-          if (payload.eventType === "INSERT" && payload.new.status === "ready_for_pickup") {
-            playOrderSound();
-          }
-          fetchOrders();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, []);
-
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
@@ -111,6 +86,55 @@ const PartnerOrders = () => {
     } else {
       setActiveOrder(null);
     }
+  }, []);
+
+  useEffect(() => {
+    fetchOrders();
+
+    // Subscribe to real-time order changes including deletes
+    const channel = supabase
+      .channel("partner-orders")
+      .on(
+        "postgres_changes",
+        {
+          event: "*", // Listen to ALL events including DELETE
+          schema: "public",
+          table: "orders"
+        },
+        (payload) => {
+          console.log("Order changed:", payload);
+          
+          if (payload.eventType === 'DELETE') {
+            // Remove from available orders immediately
+            setAvailableOrders(prev => prev.filter(o => o.id !== payload.old.id));
+            
+            // Clear active order if it was deleted
+            if (activeOrder?.id === payload.old.id) {
+              setActiveOrder(null);
+            }
+          } else if (payload.eventType === "INSERT" && payload.new.status === "ready_for_pickup") {
+            playOrderSound();
+          }
+          
+          // Always refetch for data consistency
+          fetchOrders();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [fetchOrders, activeOrder]);
+
+  // Automatically refetch when tab becomes visible
+  useVisibilityRefetch(fetchOrders);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await fetchOrders();
+    setRefreshing(false);
+    sonnerToast.success("Orders refreshed");
   };
 
   const handleAcceptOrder = async (orderId: string) => {
@@ -175,7 +199,15 @@ const PartnerOrders = () => {
             <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
               <ArrowLeft />
             </Button>
-            <h1 className="text-xl font-bold">Available Orders</h1>
+            <h1 className="text-xl font-bold flex-1">Available Orders</h1>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={handleRefresh}
+              disabled={refreshing}
+            >
+              <RefreshCw className={`h-5 w-5 ${refreshing ? 'animate-spin' : ''}`} />
+            </Button>
           </div>
         </div>
 

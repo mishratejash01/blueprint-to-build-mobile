@@ -1,12 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Package, Clock } from "lucide-react";
+import { ArrowLeft, Package, Clock, RefreshCw } from "lucide-react";
 import { format } from "date-fns";
 import { getOrderStatusMessage, getStatusEmoji } from "@/utils/notifications";
+import { useVisibilityRefetch } from "@/hooks/useVisibilityRefetch";
+import { toast } from "sonner";
 
 interface Order {
   id: string;
@@ -21,12 +23,9 @@ const OrderHistory = () => {
   const navigate = useNavigate();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    fetchOrders();
-  }, []);
-
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
@@ -44,11 +43,53 @@ const OrderHistory = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchOrders();
+
+    // Subscribe to real-time order changes including deletes
+    const channel = supabase
+      .channel('customer-orders-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Listen to ALL events (INSERT, UPDATE, DELETE)
+          schema: 'public',
+          table: 'orders'
+        },
+        (payload) => {
+          console.log('Order changed:', payload);
+          
+          if (payload.eventType === 'DELETE') {
+            // Remove deleted order from state immediately
+            setOrders(prev => prev.filter(o => o.id !== payload.old.id));
+          } else {
+            // For INSERT/UPDATE, refetch to get latest data
+            fetchOrders();
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [fetchOrders]);
+
+  // Automatically refetch when tab becomes visible
+  useVisibilityRefetch(fetchOrders);
 
   const handleReorder = (order: Order) => {
     // Navigate to store/home to allow reordering
     navigate("/home");
+  };
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await fetchOrders();
+    setRefreshing(false);
+    toast.success("Orders refreshed");
   };
 
   if (loading) {
@@ -66,7 +107,15 @@ const OrderHistory = () => {
           <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <h1 className="text-xl font-semibold">Order History</h1>
+          <h1 className="text-xl font-semibold flex-1">Order History</h1>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={handleRefresh}
+            disabled={refreshing}
+          >
+            <RefreshCw className={`h-5 w-5 ${refreshing ? 'animate-spin' : ''}`} />
+          </Button>
         </div>
       </div>
 
