@@ -101,7 +101,7 @@ const Auth = () => {
       mounted = false;
       clearTimeout(timeoutId);
     };
-  }, [isRedirecting]);
+  }, []); // Empty dependency - only run once on mount
 
 
   // --- handleSignUp remains the same ---
