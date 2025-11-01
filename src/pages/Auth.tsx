@@ -119,7 +119,8 @@ const Auth = () => {
 
     const redirectUrl = `${window.location.origin}/auth?type=${userType}`;
 
-    const role = userType === "store" ? "store_manager" : userType === "partner" ? "delivery_partner" : "customer";
+    // ### THIS IS THE FIX ###
+    const role = userType === "store" ? "store_manager" : userType === "partner" ? "partner" : "customer";
 
     const { error } = await supabase.auth.signUp({
       email,
@@ -174,7 +175,8 @@ const Auth = () => {
   // --- NEW: Handle Google Sign In ---
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
-    const role = userType === "store" ? "store_manager" : userType === "partner" ? "delivery_partner" : "customer";
+    // ### THIS IS THE FIX ###
+    const role = userType === "store" ? "store_manager" : userType === "partner" ? "partner" : "customer";
     const redirectUrl = `${window.location.origin}/auth?type=${userType}`;
 
     const { error } = await supabase.auth.signInWithOAuth({
