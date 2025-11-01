@@ -13,52 +13,75 @@ const PartnerDashboard = () => {
   const { toast } = useToast();
   const [isAvailable, setIsAvailable] = useState(false);
   const [stats, setStats] = useState({ available: 0, completed: 0 });
+  const [isTogglingAvailability, setIsTogglingAvailability] = useState(false);
+  const [isLoadingData, setIsLoadingData] = useState(true);
 
   useEffect(() => {
     fetchPartnerData();
   }, []);
 
   const fetchPartnerData = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    try {
+      setIsLoadingData(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
 
-    // Get partner availability from new dedicated column (optimized)
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("is_available")
-      .eq("id", user.id)
-      .single();
+      // Get partner availability from new dedicated column (optimized)
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("is_available")
+        .eq("id", user.id)
+        .single();
 
-    setIsAvailable(profile?.is_available || false);
+      setIsAvailable(profile?.is_available || false);
 
-    // Get available orders count
-    const { count: availableCount } = await (supabase as any)
-      .from("orders")
-      .select("*", { count: "exact", head: true })
-      .eq("status", "ready_for_pickup")
-      .is("delivery_partner_id", null);
+      // Get available orders count
+      const { count: availableCount } = await (supabase as any)
+        .from("orders")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "ready_for_pickup")
+        .is("delivery_partner_id", null);
 
-    // Get completed deliveries count
-    const { count: completedCount } = await (supabase as any)
-      .from("orders")
-      .select("*", { count: "exact", head: true })
-      .eq("delivery_partner_id", user.id)
-      .eq("status", "delivered");
+      // Get completed deliveries count
+      const { count: completedCount } = await (supabase as any)
+        .from("orders")
+        .select("*", { count: "exact", head: true })
+        .eq("delivery_partner_id", user.id)
+        .eq("status", "delivered");
 
-    setStats({
-      available: availableCount || 0,
-      completed: completedCount || 0
-    });
+      setStats({
+        available: availableCount || 0,
+        completed: completedCount || 0
+      });
+    } finally {
+      setIsLoadingData(false);
+    }
   };
 
   const handleToggleAvailability = async (checked: boolean) => {
+    if (isTogglingAvailability) return; // Prevent double-clicks
+    
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       console.error("❌ No user found");
+      toast({
+        title: "Error",
+        description: "You must be logged in to change availability",
+        variant: "destructive"
+      });
       return;
     }
 
+    setIsTogglingAvailability(true);
     console.log("🔄 Toggling availability to:", checked);
+    
+    // Haptic feedback for mobile devices
+    if ('vibrate' in navigator) {
+      navigator.vibrate(50);
+    }
+
+    // Update UI immediately for instant feedback
+    setIsAvailable(checked);
 
     const { error } = await supabase
       .from("profiles")
@@ -67,23 +90,26 @@ const PartnerDashboard = () => {
 
     if (error) {
       console.error("❌ Toggle failed:", error);
+      // Revert UI on error
+      setIsAvailable(!checked);
       toast({
-        title: "Error",
+        title: "❌ Failed to update",
         description: error.message,
         variant: "destructive"
       });
     } else {
       console.log("✅ Toggle successful");
-      setIsAvailable(checked);
       
-      // CRITICAL: Refetch data to ensure UI is in sync
+      // Refetch data to sync stats
       await fetchPartnerData();
       
       toast({
-        title: checked ? "You're now online" : "You're now offline",
+        title: checked ? "🟢 You're now online!" : "⚫ You're now offline",
         description: checked ? "You'll receive delivery requests" : "You won't receive new requests"
       });
     }
+    
+    setIsTogglingAvailability(false);
   };
 
   const handleLogout = async () => {
@@ -139,14 +165,20 @@ const PartnerDashboard = () => {
               <div>
                 <h3 className="font-semibold text-lg">Availability</h3>
                 <p className="text-sm text-muted-foreground">
-                  {isAvailable ? "You're online" : "You're offline"}
+                  {isAvailable ? "🟢 You're online" : "⚫ You're offline"}
                 </p>
               </div>
               <Switch
                 checked={isAvailable}
                 onCheckedChange={handleToggleAvailability}
+                disabled={isTogglingAvailability || isLoadingData}
               />
             </div>
+            {isTogglingAvailability && (
+              <p className="text-xs text-muted-foreground mt-2 animate-pulse">
+                Updating...
+              </p>
+            )}
           </Card>
 
           <div className="grid grid-cols-2 gap-4">

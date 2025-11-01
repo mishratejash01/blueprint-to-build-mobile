@@ -20,9 +20,12 @@ const PartnerOrders = () => {
 
   const fetchOrders = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!user) {
+      console.error("❌ No user found when fetching orders");
+      return;
+    }
 
-    console.log("Fetching orders for user:", user.id);
+    console.log("🔍 Fetching orders for partner:", user.id);
 
     // Get available orders
     const { data: available, error: availableError } = await supabase
@@ -32,7 +35,17 @@ const PartnerOrders = () => {
       .is("delivery_partner_id", null)
       .order("created_at", { ascending: false });
 
-    console.log("Available orders query result:", { available, availableError });
+    console.log("📦 Available orders query result:", { available, availableError });
+    
+    if (availableError) {
+      console.error("❌ RLS Policy Error:", availableError);
+      toast({
+        title: "Access Error",
+        description: "Unable to fetch orders. Please check your partner status.",
+        variant: "destructive"
+      });
+      return;
+    }
     
     if (available && available.length > 0) {
       const storeIds = [...new Set(available.map(o => o.store_id))];
