@@ -84,8 +84,8 @@ const Category = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-subtle pb-20">
-      <div className="sticky top-0 z-10 bg-card/80 backdrop-blur-lg border-b shadow-sm">
+    <div className="min-h-screen bg-gradient-subtle pb-20 pb-safe-bottom">
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-md border-b shadow-elegant pt-safe-top">
         <div className="p-4">
           <div className="flex items-center gap-4 mb-4">
             <Button 
@@ -96,7 +96,7 @@ const Category = () => {
             >
               <ArrowLeft className="h-5 w-5" />
             </Button>
-            <h1 className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+            <h1 className="text-2xl font-bold text-foreground">
               {displayName}
             </h1>
           </div>

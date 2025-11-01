@@ -17,6 +17,7 @@ import OrderConfirmation from "./pages/OrderConfirmation";
 import OrderTracking from "./pages/OrderTracking";
 import OrderHistory from "./pages/OrderHistory";
 import Category from "./pages/Category";
+import Categories from "./pages/Categories";
 import Profile from "./pages/Profile";
 import Addresses from "./pages/Addresses";
 import StoreDashboard from "./pages/store/StoreDashboard";
@@ -47,6 +48,7 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/home" element={<Home />} />
             <Route path="/search" element={<Search />} />
+            <Route path="/categories" element={<Categories />} />
             <Route path="/category/:categoryId" element={<Category />} />
             <Route path="/product/:productId" element={<ProductDetails />} />
             <Route path="/cart" element={<Cart />} />
