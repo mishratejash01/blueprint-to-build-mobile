@@ -73,8 +73,67 @@ const Profile = () => {
   };
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
-    navigate("/auth");
+    try {
+      // 1. Close all Supabase channels FIRST
+      await supabase.removeAllChannels();
+      
+      // 2. Clear all local caches
+      sessionStorage.clear();
+      
+      // 3. Clear specific localStorage items (keep auth tokens for proper signout)
+      const keysToRemove = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && !key.startsWith('sb-')) {
+          keysToRemove.push(key);
+        }
+      }
+      keysToRemove.forEach(key => localStorage.removeItem(key));
+      
+      // 4. Sign out from Supabase (this clears auth tokens)
+      await supabase.auth.signOut();
+      
+      // 5. Force navigation with replace
+      navigate("/auth", { replace: true });
+      
+      // 6. Force reload to ensure clean state
+      setTimeout(() => {
+        window.location.href = "/auth";
+      }, 100);
+    } catch (error) {
+      console.error("Logout error:", error);
+      // Force reload anyway
+      window.location.href = "/auth";
+    }
+  };
+
+  const handleClearAppData = async () => {
+    if (!confirm("⚠️ This will clear all local data and log you out. Continue?")) {
+      return;
+    }
+    
+    try {
+      // Clear everything
+      await supabase.removeAllChannels();
+      sessionStorage.clear();
+      localStorage.clear();
+      
+      // Clear service worker cache if exists
+      if ('caches' in window) {
+        const cacheNames = await caches.keys();
+        await Promise.all(cacheNames.map(name => caches.delete(name)));
+      }
+      
+      toast.success("App data cleared!");
+      
+      // Force reload
+      setTimeout(() => {
+        window.location.href = "/auth";
+      }, 500);
+    } catch (error) {
+      console.error("Clear data error:", error);
+      window.location.href = "/auth";
+    }
   };
 
   if (loading) {
@@ -154,6 +213,21 @@ const Profile = () => {
           <CardContent className="flex items-center gap-3 py-4">
             <LogOut className="h-5 w-5 text-destructive" />
             <p className="font-medium text-destructive">Logout</p>
+          </CardContent>
+        </Card>
+
+        <Card className="border-destructive/30">
+          <CardContent className="py-4">
+            <Button 
+              variant="destructive" 
+              onClick={handleClearAppData}
+              className="w-full"
+            >
+              🗑️ Clear App Data & Reset
+            </Button>
+            <p className="text-xs text-muted-foreground mt-2 text-center">
+              Use this if the app is not working properly
+            </p>
           </CardContent>
         </Card>
       </div>

@@ -27,53 +27,39 @@ const Auth = () => {
   const [searchParams] = useSearchParams();
   const userType = searchParams.get("type") || "customer";
 
-  // Consolidated auth state management - single source of truth
+  const [isRedirecting, setIsRedirecting] = useState(false);
+
+  // Simplified auth state management - prevent race conditions
   useEffect(() => {
     let mounted = true;
-
-    // Set up auth state listener ONCE
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (!mounted) return;
-        
-        setSession(session);
-        
-        if (session) {
-          // Fetch actual user role from database
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("role")
-            .eq("id", session.user.id)
-            .single();
-
-          if (!mounted) return;
-
-          // Single redirect based on actual role
-          if (profile?.role === "store_manager") {
-            navigate("/store/dashboard", { replace: true });
-          } else if (profile?.role === "partner") {
-            navigate("/partner/dashboard", { replace: true });
-          } else {
-            navigate("/home", { replace: true });
-          }
-        }
-      }
-    );
-
-    // Check initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!mounted || !session) return;
+      
+      setIsRedirecting(true);
+      
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", session.user.id)
+        .single();
+      
       if (!mounted) return;
-      if (session) {
-        setSession(session);
-        // Trigger auth state change handler for initial session
-      }
-    });
-
-    return () => {
-      mounted = false;
-      subscription.unsubscribe();
+      
+      // Use window.location for guaranteed navigation
+      const path = profile?.role === "store_manager" ? "/store/dashboard" 
+        : profile?.role === "partner" ? "/partner/dashboard" 
+        : "/home";
+      
+      window.location.href = path;
     };
-  }, [navigate]);
+    
+    checkAuth();
+    
+    return () => { mounted = false; };
+  }, []);
 
 
   // --- handleSignUp remains the same ---
@@ -175,6 +161,15 @@ const Auth = () => {
     if (userType === "partner") return "Delivery Partner";
     return "Customer";
   };
+
+  // Prevent rendering if redirecting
+  if (isRedirecting) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-subtle p-4">

@@ -118,21 +118,23 @@ const ProtectedRoute = ({ children, requireAuth = true, allowedRoles }: Protecte
     };
   }, [allowedRoles]);
 
-  // If timeout reached and no session, show error
+  // If timeout reached, redirect immediately (don't block)
   if (loadingTimeout && !session && requireAuth) {
-    toast({
-      title: "Connection Issue",
-      description: "Please check your connection and try again",
-      variant: "destructive"
-    });
-    return <Navigate to="/auth" replace />;
+    window.location.href = "/auth";
+    return null;
   }
 
-  // Show loading only for a short time
+  // CRITICAL FIX: Show content optimistically with non-blocking overlay
   if (loading || !roleChecked) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      <div className="relative min-h-screen">
+        {children}
+        <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50 pointer-events-none">
+          <div className="bg-card p-6 rounded-xl shadow-xl">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+            <p className="mt-2 text-sm text-muted-foreground">Verifying access...</p>
+          </div>
+        </div>
       </div>
     );
   }

@@ -180,8 +180,38 @@ const StoreDashboard = () => {
   };
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
-    navigate("/auth?type=store");
+    try {
+      // 1. Close all Supabase channels FIRST
+      await supabase.removeAllChannels();
+      
+      // 2. Clear all local caches
+      sessionStorage.clear();
+      
+      // 3. Clear specific localStorage items (keep auth tokens for proper signout)
+      const keysToRemove = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && !key.startsWith('sb-')) {
+          keysToRemove.push(key);
+        }
+      }
+      keysToRemove.forEach(key => localStorage.removeItem(key));
+      
+      // 4. Sign out from Supabase (this clears auth tokens)
+      await supabase.auth.signOut();
+      
+      // 5. Force navigation with replace
+      navigate("/auth?type=store", { replace: true });
+      
+      // 6. Force reload to ensure clean state
+      setTimeout(() => {
+        window.location.href = "/auth?type=store";
+      }, 100);
+    } catch (error) {
+      console.error("Logout error:", error);
+      // Force reload anyway
+      window.location.href = "/auth?type=store";
+    }
   };
 
   if (loading) {
