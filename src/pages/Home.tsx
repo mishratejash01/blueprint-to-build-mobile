@@ -62,11 +62,11 @@ const Home = () => {
   return (
     <ProtectedRoute>
     <div className="min-h-screen bg-[hsl(var(--muted))] pb-20">
-      {/* Premium Sticky Header */}
-      <header className="sticky top-0 z-50 bg-white border-b border-border backdrop-blur-lg bg-white/95">
+      {/* Sticky Header */}
+      <header className="sticky top-0 z-50 bg-white border-b border-border shadow-sm backdrop-blur-lg bg-white/95">
         <div className="max-w-7xl mx-auto px-4 py-3">
           <div className="flex items-center justify-between gap-4">
-            {/* Premium Logo */}
+            {/* Logo */}
             <Link to="/home" className="flex items-center gap-2.5 group">
               <div className="bg-gradient-primary p-2.5 rounded-xl group-hover:scale-105 transition-transform">
                 <Leaf className="h-6 w-6 text-white drop-shadow-sm" />
@@ -76,7 +76,7 @@ const Home = () => {
               </span>
             </Link>
             
-            {/* Premium Delivery Location */}
+            {/* Delivery Location */}
             <div className="flex items-center gap-2.5 group cursor-pointer flex-1 max-w-xs hover:bg-primary/5 p-2 rounded-xl transition-all">
               <div className="bg-primary/10 p-1.5 rounded-lg">
                 <MapPin className="h-4 w-4 text-primary flex-shrink-0" />
@@ -92,7 +92,7 @@ const Home = () => {
               </div>
             </div>
             
-            {/* Premium Cart Icon */}
+            {/* Cart Icon */}
             <Link to="/cart" className="relative group">
               <div className="bg-gradient-primary p-3 rounded-xl group-hover:scale-105 transition-all">
                 <ShoppingCart className="h-5 w-5 text-white" />
@@ -105,7 +105,7 @@ const Home = () => {
             </Link>
           </div>
           
-          {/* Premium Search Bar */}
+          {/* Search Bar */}
           <Link to="/search" className="block mt-3">
             <div className="flex items-center gap-3 bg-gradient-subtle px-4 py-3.5 rounded-xl border border-border hover:border-primary/50 hover:shadow-elegant transition-all group">
               <div className="bg-primary/10 p-2 rounded-lg group-hover:bg-primary/20 transition-colors">
@@ -134,7 +134,7 @@ const Home = () => {
         <ProductGrid products={products} title="Best Sellers" />
       </div>
 
-      {/* Premium Bottom Navigation */}
+      {/* Bottom Navigation */}
       <nav className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-lg border-t border-border shadow-premium z-50">
         <div className="max-w-7xl mx-auto flex items-center justify-around px-2 py-2 safe-area-inset-bottom">
           <Link to="/home" className="flex flex-col items-center gap-1 min-w-[70px] py-1">
