@@ -63,12 +63,12 @@ const Home = () => {
     <ProtectedRoute>
     <div className="min-h-screen bg-[hsl(var(--muted))] pb-20">
       {/* Premium Sticky Header */}
-      <header className="sticky top-0 z-50 bg-white border-b border-border shadow-premium backdrop-blur-lg bg-white/95">
+      <header className="sticky top-0 z-50 bg-white border-b border-border backdrop-blur-lg bg-white/95">
         <div className="max-w-7xl mx-auto px-4 py-3">
           <div className="flex items-center justify-between gap-4">
             {/* Premium Logo */}
             <Link to="/home" className="flex items-center gap-2.5 group">
-              <div className="bg-gradient-primary p-2.5 rounded-xl shadow-glow group-hover:scale-105 transition-transform">
+              <div className="bg-gradient-primary p-2.5 rounded-xl group-hover:scale-105 transition-transform">
                 <Leaf className="h-6 w-6 text-white drop-shadow-sm" />
               </div>
               <span className="font-bold text-xl bg-gradient-primary bg-clip-text text-transparent hidden sm:inline">
@@ -94,7 +94,7 @@ const Home = () => {
             
             {/* Premium Cart Icon */}
             <Link to="/cart" className="relative group">
-              <div className="bg-gradient-primary p-3 rounded-xl shadow-elegant group-hover:shadow-glow group-hover:scale-105 transition-all">
+              <div className="bg-gradient-primary p-3 rounded-xl group-hover:scale-105 transition-all">
                 <ShoppingCart className="h-5 w-5 text-white" />
               </div>
               {itemCount > 0 && (
