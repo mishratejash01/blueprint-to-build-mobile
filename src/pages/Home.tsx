@@ -1,13 +1,14 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Search, MapPin, ShoppingCart, User, Home as HomeIcon, LayoutGrid, Sparkles } from "lucide-react";
+// Correct icons are back
+import { Search, MapPin, ShoppingCart, User, Home as HomeIcon, LayoutGrid, Sparkles, Leaf } from "lucide-react"; 
 import { useCart } from "@/contexts/CartContext";
 import { supabase } from "@/integrations/supabase/client";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import CategoryScroll from "@/components/CategoryScroll";
 import ProductGrid from "@/components/ProductGrid";
 import HeroBanner from "@/components/HeroBanner";
-import { Leaf } from "lucide-react";
+// No longer need the duplicate Leaf import
 
 const Home = () => {
   const { itemCount } = useCart();
@@ -61,12 +62,14 @@ const Home = () => {
 
   return (
     <ProtectedRoute>
-    <div className="min-h-screen bg-[hsl(var(--muted))] pb-20">
-      {/* Sticky Header */}
+    {/* This div is now the wrapper, layout handles padding */}
+    <div>
+      {/* Premium Sticky Header - Replaced shadow-premium with standard shadow-sm */}
       <header className="sticky top-0 z-50 bg-white border-b border-border shadow-sm backdrop-blur-lg bg-white/95">
         <div className="max-w-7xl mx-auto px-4 py-3">
           <div className="flex items-center justify-between gap-4">
-            {/* Logo */}
+            
+            {/* Premium Logo - shadow-glow removed */}
             <Link to="/home" className="flex items-center gap-2.5 group">
               <div className="bg-gradient-primary p-2.5 rounded-xl group-hover:scale-105 transition-transform">
                 <Leaf className="h-6 w-6 text-white drop-shadow-sm" />
@@ -76,7 +79,7 @@ const Home = () => {
               </span>
             </Link>
             
-            {/* Delivery Location */}
+            {/* Premium Delivery Location */}
             <div className="flex items-center gap-2.5 group cursor-pointer flex-1 max-w-xs hover:bg-primary/5 p-2 rounded-xl transition-all">
               <div className="bg-primary/10 p-1.5 rounded-lg">
                 <MapPin className="h-4 w-4 text-primary flex-shrink-0" />
@@ -92,7 +95,7 @@ const Home = () => {
               </div>
             </div>
             
-            {/* Cart Icon */}
+            {/* Premium Cart Icon - shadow-elegant and shadow-glow removed */}
             <Link to="/cart" className="relative group">
               <div className="bg-gradient-primary p-3 rounded-xl group-hover:scale-105 transition-all">
                 <ShoppingCart className="h-5 w-5 text-white" />
@@ -105,7 +108,7 @@ const Home = () => {
             </Link>
           </div>
           
-          {/* Search Bar */}
+          {/* Premium Search Bar */}
           <Link to="/search" className="block mt-3">
             <div className="flex items-center gap-3 bg-gradient-subtle px-4 py-3.5 rounded-xl border border-border hover:border-primary/50 hover:shadow-elegant transition-all group">
               <div className="bg-primary/10 p-2 rounded-lg group-hover:bg-primary/20 transition-colors">
@@ -134,58 +137,7 @@ const Home = () => {
         <ProductGrid products={products} title="Best Sellers" />
       </div>
 
-      {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-lg border-t border-border shadow-premium z-50">
-        <div className="max-w-7xl mx-auto flex items-center justify-around px-2 py-2 safe-area-inset-bottom">
-          <Link to="/home" className="flex flex-col items-center gap-1 min-w-[70px] py-1">
-            <div className="bg-gradient-primary p-2.5 rounded-xl shadow-elegant">
-              <HomeIcon className="h-5 w-5 text-white" />
-            </div>
-            <span className="text-[10px] font-bold text-primary">Home</span>
-          </Link>
-          
-          <Link to="/search" className="flex flex-col items-center gap-1 min-w-[70px] py-1 group">
-            <div className="p-2.5 rounded-xl bg-muted/50 group-hover:bg-primary/10 group-hover:shadow-elegant transition-all">
-              <Search className="h-5 w-5 text-[hsl(var(--text-secondary))] group-hover:text-primary transition-colors" />
-            </div>
-            <span className="text-[10px] font-semibold text-[hsl(var(--text-secondary))] group-hover:text-primary transition-colors">
-              Search
-            </span>
-          </Link>
-          
-          <Link to="/home" className="flex flex-col items-center gap-1 min-w-[70px] py-1 group">
-            <div className="p-2.5 rounded-xl bg-muted/50 group-hover:bg-primary/10 group-hover:shadow-elegant transition-all">
-              <LayoutGrid className="h-5 w-5 text-[hsl(var(--text-secondary))] group-hover:text-primary transition-colors" />
-            </div>
-            <span className="text-[10px] font-semibold text-[hsl(var(--text-secondary))] group-hover:text-primary transition-colors">
-              Categories
-            </span>
-          </Link>
-          
-          <Link to="/cart" className="flex flex-col items-center gap-1 min-w-[70px] py-1 group relative">
-            <div className="p-2.5 rounded-xl bg-muted/50 group-hover:bg-primary/10 group-hover:shadow-elegant transition-all">
-              <ShoppingCart className="h-5 w-5 text-[hsl(var(--text-secondary))] group-hover:text-primary transition-colors" />
-              {itemCount > 0 && (
-                <span className="absolute top-0 right-0 bg-gradient-primary text-white text-[10px] font-bold rounded-full h-5 w-5 flex items-center justify-center shadow-glow ring-2 ring-white animate-scale-in">
-                  {itemCount}
-                </span>
-              )}
-            </div>
-            <span className="text-[10px] font-semibold text-[hsl(var(--text-secondary))] group-hover:text-primary transition-colors">
-              Cart
-            </span>
-          </Link>
-          
-          <Link to="/profile" className="flex flex-col items-center gap-1 min-w-[70px] py-1 group">
-            <div className="p-2.5 rounded-xl bg-muted/50 group-hover:bg-primary/10 group-hover:shadow-elegant transition-all">
-              <User className="h-5 w-5 text-[hsl(var(--text-secondary))] group-hover:text-primary transition-colors" />
-            </div>
-            <span className="text-[10px] font-semibold text-[hsl(var(--text-secondary))] group-hover:text-primary transition-colors">
-              Profile
-            </span>
-          </Link>
-        </div>
-      </nav>
+      {/* Bottom Nav is rendered by CustomerLayout.tsx */}
     </div>
     </ProtectedRoute>
   );
