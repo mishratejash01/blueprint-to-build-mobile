@@ -39,15 +39,15 @@ serve(async (req) => {
     }
 
     // Check if OTP already exists and is still valid
-    const { data: existingOtp, error: existingOtpError } = await supabaseClient
+    const { data: existingOtp } = await supabaseClient
       .from('store_pickup_otps')
       .select('*')
       .eq('order_id', orderId)
       .gte('expires_at', new Date().toISOString())
       .eq('is_verified', false)
-      .maybeSingle();
+      .single();
 
-    if (existingOtp && !existingOtpError) {
+    if (existingOtp) {
       return new Response(
         JSON.stringify({
           success: true,

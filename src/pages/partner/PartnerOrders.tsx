@@ -78,18 +78,15 @@ const PartnerOrders = () => {
       setAvailableOrders([]);
     }
 
-    // Get active orders (can be multiple if partner hasn't completed previous ones)
-    const { data: activeOrders, error: activeError } = await supabase
+    // Get active order
+    const { data: active, error: activeError } = await supabase
       .from("orders")
       .select("*")
       .eq("delivery_partner_id", user.id)
-      .in("status", ["awaiting_pickup_verification", "in_transit"])
-      .order("created_at", { ascending: false });
+      .eq("status", "in_transit")
+      .maybeSingle();
 
-    console.log("Active orders query result:", { activeOrders, activeError });
-    
-    // Take the most recent active order
-    const active = activeOrders && activeOrders.length > 0 ? activeOrders[0] : null;
+    console.log("Active order query result:", { active, activeError });
     
     if (active) {
       const { data: store } = await supabase
@@ -130,19 +127,21 @@ const PartnerOrders = () => {
       }
 
       // Generate OTP for pickup verification
-      const { data: otpData, error: otpError } = await supabase.functions.invoke('generate-pickup-otp', {
-        body: { orderId },
-      });
+      const { data: { session } } = await supabase.auth.getSession();
+      const otpResponse = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-pickup-otp`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${session?.access_token}`,
+          },
+          body: JSON.stringify({ orderId }),
+        }
+      );
 
-      if (otpError) {
-        console.error("Failed to generate OTP:", otpError);
-        toast({
-          title: "Warning",
-          description: "Order accepted, but OTP generation failed. Please try again.",
-          variant: "destructive"
-        });
-      } else {
-        console.log("OTP generated successfully:", otpData);
+      if (!otpResponse.ok) {
+        console.error("Failed to generate OTP");
       }
 
       // Sync to Google Sheets

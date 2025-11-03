@@ -115,29 +115,6 @@ const Checkout = () => {
     setLoading(true);
 
     try {
-      // Validate stock availability for all items
-      for (const item of items) {
-        const { data: product, error: productError } = await supabase
-          .from("products")
-          .select("stock_quantity, is_available")
-          .eq("id", item.id)
-          .single();
-
-        if (productError || !product) {
-          throw new Error(`Unable to verify stock for ${item.name}`);
-        }
-
-        if (!product.is_available) {
-          throw new Error(`${item.name} is currently unavailable`);
-        }
-
-        if (product.stock_quantity < item.quantity) {
-          throw new Error(
-            `Only ${product.stock_quantity} units of ${item.name} available. Please adjust your cart.`
-          );
-        }
-      }
-
       // Save address if checkbox is checked
       if (saveAddress && !selectedAddressId) {
         await supabase.from("saved_addresses").insert({
@@ -229,8 +206,8 @@ const Checkout = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-subtle pb-32 pb-safe-bottom">
-      <div className="sticky top-0 bg-background/95 backdrop-blur-md border-b z-10 p-4 pt-safe-top shadow-elegant">
+    <div className="min-h-screen bg-background pb-32">
+      <div className="sticky top-0 bg-white border-b z-10 p-4">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
             <ArrowLeft />
@@ -354,7 +331,7 @@ const Checkout = () => {
         </Card>
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-md border-t p-4 pb-safe-bottom shadow-premium">
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-4">
         <div className="space-y-2 mb-4">
           <div className="flex justify-between text-sm">
             <span>Subtotal</span>

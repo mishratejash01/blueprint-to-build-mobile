@@ -47,43 +47,36 @@ const PickupVerify = () => {
       return;
     }
 
-    if (attempts >= 3) {
-      toast.error("Maximum attempts reached. Please contact support.");
-      return;
-    }
-
     setLoading(true);
     try {
-      // Refresh session before making edge function call to ensure JWT is valid
-      const { data: { session }, error: sessionError } = 
-        await supabase.auth.refreshSession();
+      const { data: { session } } = await supabase.auth.getSession();
       
-      if (sessionError || !session) {
-        throw new Error("Session expired. Please log in again.");
-      }
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/verify-pickup-otp`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${session?.access_token}`,
+          },
+          body: JSON.stringify({
+            orderId,
+            otpCode: otp,
+          }),
+        }
+      );
 
-      // Use supabase.functions.invoke for proper JWT handling
-      const { data, error } = await supabase.functions.invoke('verify-pickup-otp', {
-        body: {
-          orderId,
-          otpCode: otp,
-        },
-      });
+      const result = await response.json();
 
-      if (error) {
-        throw new Error(error.message || "Verification failed");
-      }
-
-      if (!data.success) {
-        throw new Error(data.error || "Verification failed");
+      if (!response.ok) {
+        throw new Error(result.error || "Verification failed");
       }
 
       toast.success("Pickup verified! Starting delivery...");
-      navigate(`/partner/delivery/${orderId}`, { replace: true });
+      navigate(`/partner/delivery/${orderId}`);
     } catch (error: any) {
       setAttempts(prev => prev + 1);
-      console.error("OTP verification error:", error);
-      toast.error(error.message || "Invalid OTP. Please try again.");
+      toast.error(error.message || "Verification failed");
       setOtp("");
     } finally {
       setLoading(false);

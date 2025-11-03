@@ -153,7 +153,7 @@ const Home = () => {
             </span>
           </Link>
           
-          <Link to="/categories" className="flex flex-col items-center gap-1 min-w-[70px] py-1 group">
+          <Link to="/home" className="flex flex-col items-center gap-1 min-w-[70px] py-1 group">
             <div className="p-2.5 rounded-xl bg-muted/50 group-hover:bg-primary/10 group-hover:shadow-elegant transition-all">
               <LayoutGrid className="h-5 w-5 text-[hsl(var(--text-secondary))] group-hover:text-primary transition-colors" />
             </div>

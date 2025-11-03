@@ -18,7 +18,6 @@ const StoreOrders = () => {
   const [orders, setOrders] = useState<any[]>([]);
   const [pickupOtps, setPickupOtps] = useState<Record<string, any>>({});
   const [activeFilter, setActiveFilter] = useState<string>(searchParams.get("filter") || "all");
-  const [otpTimeLeft, setOtpTimeLeft] = useState<Record<string, number>>({});
 
   useEffect(() => {
     requestNotificationPermission();
@@ -29,22 +28,6 @@ const StoreOrders = () => {
       supabase.removeAllChannels();
     };
   }, []);
-
-  // OTP countdown timer
-  useEffect(() => {
-    const timer = setInterval(() => {
-      const newTimes: Record<string, number> = {};
-      Object.entries(pickupOtps).forEach(([orderId, otp]) => {
-        const expiry = new Date(otp.expires_at);
-        const now = new Date();
-        const diff = Math.floor((expiry.getTime() - now.getTime()) / 1000);
-        newTimes[orderId] = Math.max(0, diff);
-      });
-      setOtpTimeLeft(newTimes);
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [pickupOtps]);
 
   useEffect(() => {
     const filter = searchParams.get("filter");
@@ -212,11 +195,12 @@ const StoreOrders = () => {
     ).join(" ");
   };
 
-  const formatTimeRemaining = (seconds: number) => {
-    if (seconds <= 0) return "Expired";
-    const minutes = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${minutes}:${secs.toString().padStart(2, '0')}`;
+  const getTimeRemaining = (expiresAt: string) => {
+    const now = new Date();
+    const expiry = new Date(expiresAt);
+    const diff = expiry.getTime() - now.getTime();
+    const minutes = Math.floor(diff / 60000);
+    return minutes > 0 ? `${minutes} min` : "Expired";
   };
 
   const filteredOrders = orders.filter((order) => {
@@ -371,7 +355,7 @@ const StoreOrders = () => {
                     </div>
                   )}
 
-                  {/* OTP Display with Live Countdown */}
+                  {/* OTP Display */}
                   {otp && !isExpired && (
                     <div className="bg-primary/10 border-2 border-primary/30 rounded-lg p-4 text-center space-y-2">
                       <p className="text-xs font-semibold text-primary uppercase tracking-wide">
@@ -380,14 +364,9 @@ const StoreOrders = () => {
                       <p className="text-5xl font-bold font-mono tracking-widest text-primary animate-pulse">
                         {otp.otp_code}
                       </p>
-                      <div className="flex items-center justify-center gap-2">
-                        <Clock className="w-4 h-4 text-primary" />
-                        <p className={`text-sm font-semibold ${
-                          otpTimeLeft[order.id] <= 60 ? 'text-destructive animate-pulse' : 'text-primary'
-                        }`}>
-                          {formatTimeRemaining(otpTimeLeft[order.id] || 0)}
-                        </p>
-                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Valid for {getTimeRemaining(otp.expires_at)}
+                      </p>
                       <p className="text-xs text-muted-foreground">
                         Share this code with delivery partner
                       </p>

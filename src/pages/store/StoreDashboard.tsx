@@ -41,8 +41,10 @@ const StoreDashboard = () => {
           filter: `store_id=eq.${storeInfo.id}`
         }, (payload) => {
           console.log('Order update received for store:', storeInfo.id, payload);
-          // Refresh stats immediately for real-time updates
-          fetchStats();
+          // Add a small delay to ensure DB has committed the transaction
+          setTimeout(() => {
+            fetchStats();
+          }, 300);
         })
         .subscribe();
 

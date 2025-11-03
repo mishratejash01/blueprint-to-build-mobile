@@ -27,8 +27,8 @@ const Cart = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-subtle pb-32 pb-safe-bottom">
-      <div className="sticky top-0 bg-background/95 backdrop-blur-md border-b z-10 p-4 pt-safe-top shadow-elegant">
+    <div className="min-h-screen bg-background pb-32">
+      <div className="sticky top-0 bg-white border-b z-10 p-4">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
             <ArrowLeft />
@@ -87,7 +87,7 @@ const Cart = () => {
         ))}
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-md border-t p-4 pb-safe-bottom shadow-premium">
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-4">
         <div className="space-y-2 mb-4">
           <div className="flex justify-between">
             <span className="text-muted-foreground">Subtotal</span>
