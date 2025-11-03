@@ -27,7 +27,7 @@ const Cart = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-32">
+    <div className="bg-background">
       <div className="sticky top-0 bg-white border-b z-10 p-4">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
