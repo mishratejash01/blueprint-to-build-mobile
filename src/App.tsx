@@ -4,6 +4,11 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { CartProvider } from "./contexts/CartContext";
+
+// Import the new layout
+import CustomerLayout from "./components/CustomerLayout";
+
+// Import Pages
 import Splash from "./pages/Splash";
 import Onboarding from "./pages/Onboarding";
 import Location from "./pages/Location";
@@ -41,31 +46,53 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <Routes>
+            {/* Standalone routes (no nav bar) */}
             <Route path="/" element={<Splash />} />
             <Route path="/onboarding" element={<Onboarding />} />
             <Route path="/location" element={<Location />} />
             <Route path="/auth" element={<Auth />} />
-            <Route path="/home" element={<Home />} />
-            <Route path="/search" element={<Search />} />
-            <Route path="/category/:categoryId" element={<Category />} />
+
+            {/* Customer routes WITH the persistent bottom nav bar */}
+            <Route element={<CustomerLayout />}>
+              <Route path="/home" element={<Home />} />
+              <Route path="/search" element={<Search />} />
+              <Route path="/category/:categoryId" element={<Category />} />
+              <Route path="/cart" element={<Cart />} />
+              <Route path="/orders" element={<OrderHistory />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/addresses" element={<Addresses />} />
+            </Route>
+
+            {/* Customer routes WITHOUT the nav bar (full-screen) */}
             <Route path="/product/:productId" element={<ProductDetails />} />
-            <Route path="/cart" element={<Cart />} />
             <Route path="/checkout" element={<Checkout />} />
-            <Route path="/order-confirmation/:orderId" element={<OrderConfirmation />} />
+            <Route
+              path="/order-confirmation/:orderId"
+              element={<OrderConfirmation />}
+            />
             <Route path="/track/:orderId" element={<OrderTracking />} />
-            <Route path="/orders" element={<OrderHistory />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/addresses" element={<Addresses />} />
+
+            {/* Store routes */}
             <Route path="/store/dashboard" element={<StoreDashboard />} />
             <Route path="/store/inventory" element={<StoreInventory />} />
             <Route path="/store/orders" element={<StoreOrders />} />
             <Route path="/store/analytics" element={<StoreAnalytics />} />
+
+            {/* Partner routes */}
             <Route path="/partner/dashboard" element={<PartnerDashboard />} />
             <Route path="/partner/orders" element={<PartnerOrders />} />
-            <Route path="/partner/pickup-verify/:orderId" element={<PickupVerify />} />
+            <Route
+              path="/partner/pickup-verify/:orderId"
+              element={<PickupVerify />}
+            />
             <Route path="/partner/earnings" element={<PartnerEarnings />} />
             <Route path="/partner/profile" element={<PartnerProfile />} />
-            <Route path="/partner/delivery/:orderId" element={<ActiveDelivery />} />
+            <Route
+              path="/partner/delivery/:orderId"
+              element={<ActiveDelivery />}
+            />
+
+            {/* Not Found */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
