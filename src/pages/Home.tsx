@@ -1,14 +1,14 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-// Correct icons are back
-import { Search, MapPin, ShoppingCart, User, Home as HomeIcon, LayoutGrid, Sparkles, Leaf } from "lucide-react"; 
+// THIS IS THE CORRECTED IMPORT LINE:
+import { Search, MapPin, ShoppingCart, Sparkles, Leaf } from "lucide-react";
 import { useCart } from "@/contexts/CartContext";
 import { supabase } from "@/integrations/supabase/client";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import CategoryScroll from "@/components/CategoryScroll";
 import ProductGrid from "@/components/ProductGrid";
 import HeroBanner from "@/components/HeroBanner";
-// No longer need the duplicate Leaf import
+// No other imports needed
 
 const Home = () => {
   const { itemCount } = useCart();
@@ -64,12 +64,12 @@ const Home = () => {
     <ProtectedRoute>
     {/* This div is now the wrapper, layout handles padding */}
     <div>
-      {/* Premium Sticky Header - Replaced shadow-premium with standard shadow-sm */}
+      {/* Sticky Header - Replaced shadow-premium with standard shadow-sm */}
       <header className="sticky top-0 z-50 bg-white border-b border-border shadow-sm backdrop-blur-lg bg-white/95">
         <div className="max-w-7xl mx-auto px-4 py-3">
           <div className="flex items-center justify-between gap-4">
             
-            {/* Premium Logo - shadow-glow removed */}
+            {/* Logo - shadow-glow removed */}
             <Link to="/home" className="flex items-center gap-2.5 group">
               <div className="bg-gradient-primary p-2.5 rounded-xl group-hover:scale-105 transition-transform">
                 <Leaf className="h-6 w-6 text-white drop-shadow-sm" />
@@ -79,7 +79,7 @@ const Home = () => {
               </span>
             </Link>
             
-            {/* Premium Delivery Location */}
+            {/* Delivery Location */}
             <div className="flex items-center gap-2.5 group cursor-pointer flex-1 max-w-xs hover:bg-primary/5 p-2 rounded-xl transition-all">
               <div className="bg-primary/10 p-1.5 rounded-lg">
                 <MapPin className="h-4 w-4 text-primary flex-shrink-0" />
@@ -95,7 +95,7 @@ const Home = () => {
               </div>
             </div>
             
-            {/* Premium Cart Icon - shadow-elegant and shadow-glow removed */}
+            {/* Cart Icon - shadow-elegant and shadow-glow removed */}
             <Link to="/cart" className="relative group">
               <div className="bg-gradient-primary p-3 rounded-xl group-hover:scale-105 transition-all">
                 <ShoppingCart className="h-5 w-5 text-white" />
@@ -108,7 +108,7 @@ const Home = () => {
             </Link>
           </div>
           
-          {/* Premium Search Bar */}
+          {/* Search Bar */}
           <Link to="/search" className="block mt-3">
             <div className="flex items-center gap-3 bg-gradient-subtle px-4 py-3.5 rounded-xl border border-border hover:border-primary/50 hover:shadow-elegant transition-all group">
               <div className="bg-primary/10 p-2 rounded-lg group-hover:bg-primary/20 transition-colors">
