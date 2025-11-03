@@ -84,7 +84,7 @@ const Category = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-subtle pb-20">
+    <div className="bg-gradient-subtle">
       <div className="sticky top-0 z-10 bg-card/80 backdrop-blur-lg border-b shadow-sm">
         <div className="p-4">
           <div className="flex items-center gap-4 mb-4">
