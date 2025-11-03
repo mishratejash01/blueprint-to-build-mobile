@@ -96,7 +96,7 @@ const CustomerLayout = () => {
             <div className={cartClasses.div}>
               <ShoppingCart className={cartClasses.icon} />
               {itemCount > 0 && (
-                <span className="absolute top-0 right-0 bg-gradient-primary text-white text-[10px] font-bold rounded-full h-5 w-5 flex items-center justify-center shadow-glow ring-2 ring-white animate-scale-in">
+                <span className="absolute top-0 right-0 bg-gradient-primary text-white text-[10px] font-bold rounded-full h-5 w-5 flex items-center justify-center shadow-strong ring-2 ring-white animate-scale-in">
                   {itemCount}
                 </span>
               )}
