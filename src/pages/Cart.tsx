@@ -10,18 +10,27 @@ const Cart = () => {
 
   if (items.length === 0) {
     return (
-      <div className="min-h-screen bg-background">
-        <div className="sticky top-0 bg-white border-b z-10 p-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
-            <ArrowLeft />
-          </Button>
-        </div>
-        <div className="flex flex-col items-center justify-center p-8 text-center min-h-[60vh]">
+      	<div className="min-h-screen bg-background pb-28">
+        <header className="sticky top-0 bg-background border-b z-10 p-4">
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="icon" onClick={() => navigate(-1)} aria-label="Go back">
+              <ArrowLeft />
+            </Button>
+            <h1 className="text-xl font-bold">Cart</h1>
+          </div>
+        </header>
+
+        <main className="flex flex-col items-center justify-center p-8 text-center min-h-[60vh]">
           <div className="text-6xl mb-4">🛒</div>
           <h2 className="text-2xl font-bold mb-2">Your cart is empty</h2>
-          <p className="text-muted-foreground mb-6">Add some items to get started</p>
-          <Button onClick={() => navigate("/home")}>Start Shopping</Button>
-        </div>
+          <p className="text-muted-foreground mb-6">Add items to place your order.</p>
+        </main>
+
+        <footer className="fixed bottom-0 left-0 right-0 bg-background border-t p-4">
+          <Button onClick={() => navigate("/home")} className="w-full btn-touch">
+            Start Shopping
+          </Button>
+        </footer>
       </div>
     );
   }
