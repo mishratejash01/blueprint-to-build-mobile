@@ -40,7 +40,7 @@ const Cart = () => {
         </div>
       </div>
 
-      <div className="p-4 space-y-4">
+      <div className="p-4 pb-48 space-y-4">
         {items.map((item) => (
           <Card key={item.id} className="p-4">
             <div className="flex gap-4">
